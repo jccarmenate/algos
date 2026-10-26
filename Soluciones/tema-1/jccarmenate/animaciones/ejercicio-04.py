@@ -24,31 +24,31 @@ from comun import (AMARILLO, APAGADO, AZUL, DORADO, GRIS, ROJO, VERDE, Narrador,
 
 BLANCO = "□"
 INCREMENTAR = {
-    ("acarreo", "1"): ("0", -1, "acarreo"),
-    ("acarreo", "0"): ("1", +1, "volver"),
-    ("acarreo", BLANCO): ("1", +1, "volver"),
-    ("volver", "0"): ("0", +1, "volver"),
-    ("volver", BLANCO): (BLANCO, -1, "fin"),
+    ("carry", "1"): ("0", -1, "carry"),
+    ("carry", "0"): ("1", +1, "back"),
+    ("carry", BLANCO): ("1", +1, "back"),
+    ("back", "0"): ("0", +1, "back"),
+    ("back", BLANCO): (BLANCO, -1, "halt"),
 }
 INCREMENTAR_DESDE_MSB = {
-    ("ir", "0"): ("0", +1, "ir"),
-    ("ir", "1"): ("1", +1, "ir"),
-    ("ir", BLANCO): (BLANCO, -1, "acarreo"),
-    ("acarreo", "1"): ("0", -1, "acarreo"),
-    ("acarreo", "0"): ("1", -1, "volver"),
-    ("acarreo", BLANCO): ("1", -1, "volver"),
-    ("volver", "0"): ("0", -1, "volver"),
-    ("volver", "1"): ("1", -1, "volver"),
-    ("volver", BLANCO): (BLANCO, +1, "fin"),
+    ("go", "0"): ("0", +1, "go"),
+    ("go", "1"): ("1", +1, "go"),
+    ("go", BLANCO): (BLANCO, -1, "carry"),
+    ("carry", "1"): ("0", -1, "carry"),
+    ("carry", "0"): ("1", -1, "back"),
+    ("carry", BLANCO): ("1", -1, "back"),
+    ("back", "0"): ("0", -1, "back"),
+    ("back", "1"): ("1", -1, "back"),
+    ("back", BLANCO): (BLANCO, +1, "halt"),
 }
-COLOR_ESTADO = {"acarreo": AMARILLO, "volver": AZUL, "ir": GRIS, "fin": GRIS}
+COLOR_ESTADO = {"carry": AMARILLO, "back": AZUL, "go": GRIS, "halt": GRIS}
 
 
 def correr(delta, cinta, cabezal, estado):
     """Como en ejercicio-04.py, pero devuelve también los pasos:
     (estado, posición, leído, escrito, posición siguiente, estado siguiente)."""
     pasos = []
-    while estado != "fin":
+    while estado != "halt":
         leido = cinta.get(cabezal, BLANCO)
         escribe, mueve, nuevo = delta[(estado, leido)]
         pasos.append((estado, cabezal, leido, escribe, cabezal + mueve, nuevo))
@@ -100,11 +100,11 @@ class Monedas(Scene):
     def construct(self):
         narr = Narrador()
         self.add(titulo(r"Dos monedas por cada 1: el incremento cuesta 4"))
-        cinta, cabezal = contar_hasta(INCREMENTAR, "acarreo", 23)
+        cinta, cabezal = contar_hasta(INCREMENTAR, "carry", 23)
         tira = Cinta(range(-6, 2), y=0.5, x=-1.3)
         tira.escribir(cinta)
         cab = flecha_cabezal(AMARILLO).next_to(tira.de(cabezal), UP, 0.12)
-        estado = rotulo(r"\texttt{acarreo}", 30, AMARILLO).next_to(cab, UP, 0.08)
+        estado = rotulo(r"\texttt{carry}", 30, AMARILLO).next_to(cab, UP, 0.08)
         self.play(FadeIn(tira.celdas), FadeIn(cab), FadeIn(estado), *narr.decir(
             r"La cinta tiene $10111 = 23$, y el cabezal está en el bit menos significativo"))
 
@@ -130,17 +130,17 @@ class Monedas(Scene):
         self.wait(0.5)
 
         antes = len(todas)
-        cabezal, pasos = correr(INCREMENTAR, cinta, cabezal, "acarreo")
+        cabezal, pasos = correr(INCREMENTAR, cinta, cabezal, "carry")
         for k, (est, p, leido, escribe, siguiente, nuevo) in enumerate(pasos, start=1):
-            if est == "acarreo" and leido == "1":
+            if est == "carry" and leido == "1":
                 paga = bolsas[p].pop(0)
                 dicho = r"El acarreo borra un 1: lo paga una de sus monedas"
-            elif est == "volver" and bolsas.get(p):
+            elif est == "back" and bolsas.get(p):
                 paga = bolsas[p].pop(0)
                 dicho = r"A la vuelta, la otra moneda de ese 1 paga el paso"
             else:
                 paga = banco.pop(0)
-                dicho = (r"Escribir el 1 lo paga el incremento" if est == "acarreo" else
+                dicho = (r"Escribir el 1 lo paga el incremento" if est == "carry" else
                          r"El último paso, de vuelta al principio, también")
             color = COLOR_ESTADO[nuevo]
             self.play(paga.animate.move_to(cab.get_center()).scale(0.6), *narr.decir(dicho),
@@ -179,9 +179,9 @@ class Cabezal(Scene):
         self.add(titulo(r"¿Y si el cabezal empieza en el otro extremo?"))
         v = 100
         tiras = []
-        for y, delta, inicial, nombre in ((1.6, INCREMENTAR, "acarreo",
+        for y, delta, inicial, nombre in ((1.6, INCREMENTAR, "carry",
                                            r"desde el bit menos significativo"),
-                                          (-0.6, INCREMENTAR_DESDE_MSB, "ir",
+                                          (-0.6, INCREMENTAR_DESDE_MSB, "go",
                                            r"desde el bit más significativo")):
             cinta, cabezal = contar_hasta(delta, inicial, v)
             tira = Cinta(range(-7, 2), y=y, lado=0.72, x=-1.6)
@@ -218,7 +218,7 @@ class Cabezal(Scene):
     def promedios(self, narr):
         ms = [16, 256, 4096, 65536]
         datos = []
-        for delta, inicial in ((INCREMENTAR, "acarreo"), (INCREMENTAR_DESDE_MSB, "ir")):
+        for delta, inicial in ((INCREMENTAR, "carry"), (INCREMENTAR_DESDE_MSB, "go")):
             cinta, cabezal, total, fila = {0: "0"}, 0, 0, []
             for m in range(1, ms[-1] + 1):
                 cabezal, pasos = correr(delta, cinta, cabezal, inicial)

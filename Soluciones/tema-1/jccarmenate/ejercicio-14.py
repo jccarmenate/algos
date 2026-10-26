@@ -28,13 +28,13 @@ class Comparador:
     def __init__(self, A):
         self.A, self.veces, self.preguntas = A, 0, []
 
-    def mayor(self, i, j):
+    def greater(self, i, j):
         """¿A[i] > A[j]?"""
         self.veces += 1
         self.preguntas.append((i, j))
         return self.A[i] > self.A[j]
 
-    def comparar(self, i, j):
+    def compare(self, i, j):
         """-1, 0 o 1, para la versión con repetidos."""
         self.veces += 1
         return (self.A[i] > self.A[j]) - (self.A[i] < self.A[j])
@@ -46,24 +46,24 @@ def rotado(B, k):
     return [B[(i - k) % n] for i in range(n)]
 
 
-def fuerza_bruta(n, c):
+def brute_force(n, c):
     """Busca el único descenso A[i] > A[i+1]; si no hay, el arreglo no está rotado."""
     for i in range(n - 1):
-        if c.mayor(i, i + 1):
+        if c.greater(i, i + 1):
             return i + 1
     return 0
 
 
-def punto_de_rotacion(n, c, referencia="ultimo"):
+def rotation_point(n, c, referencia="ultimo"):
     """Búsqueda binaria del primer i con A[i] <= A[n-1]. referencia = "primero" es el
     error plantado de la sección 10: usa A[0] y busca el primer i con A[i] < A[0]."""
     lo, hi = 0, n - 1
     while lo < hi:
         m = (lo + hi) // 2
         if referencia == "ultimo":
-            alto = c.mayor(m, n - 1)               # A[m] > A[n-1]: m está antes de k
+            alto = c.greater(m, n - 1)               # A[m] > A[n-1]: m está antes de k
         else:
-            alto = not c.mayor(0, m)               # A[m] >= A[0]
+            alto = not c.greater(0, m)               # A[m] >= A[0]
         if alto:
             lo = m + 1
         else:
@@ -96,7 +96,7 @@ def minimo_con_repetidos(n, c):
     lo, hi = 0, n - 1
     while lo < hi:
         m = (lo + hi) // 2
-        r = c.comparar(m, hi)
+        r = c.compare(m, hi)
         if r > 0:
             lo = m + 1
         elif r < 0:
@@ -113,7 +113,7 @@ class Adversario:
     def __init__(self, n):
         self.vivas, self.veces, self.preguntas = set(range(n)), 0, []
 
-    def mayor(self, i, j):
+    def greater(self, i, j):
         self.veces += 1
         self.preguntas.append((i, j))
         if i == j:
@@ -185,9 +185,9 @@ def ejemplo_chico():
         print(f"{paso:>4} {lo:>3} {hi:>3} {m:>3} {A[m]:>5}  {que}")
         lo, hi = (m + 1, hi) if alto else (lo, m)
     c = Comparador(A)
-    k = punto_de_rotacion(n, c)
+    k = rotation_point(n, c)
     cb = Comparador(A)
-    fuerza_bruta(n, cb)
+    brute_force(n, cb)
     print(f"resultado: k = {k}, con {c.veces} comparaciones; la fuerza bruta usa "
           f"{cb.veces}; ceil(log2 12) = {techo_log2(n)}")
     return A
@@ -201,20 +201,20 @@ def costo_exacto():
         peor = 0
         for k in range(n):
             c = Comparador(rotado(B, k))
-            assert punto_de_rotacion(n, c) == k
+            assert rotation_point(n, c) == k
             assert c.veces in (techo_log2(n), n.bit_length() - 1)
             peor = max(peor, c.veces)
             total += 1
         assert peor == techo_log2(n)
         c = Comparador(rotado(B, 0))
-        punto_de_rotacion(n, c)
+        rotation_point(n, c)
         assert c.veces == techo_log2(n)
     print(f"{miles(total)} arreglos (n de 1 a 300, todas las rotaciones): todos "
           f"correctos, con floor(log2 n) o ceil(log2 n) comparaciones;")
     print("el peor caso es ceil(log2 n) para todo n, y lo alcanza el arreglo sin rotar")
     n = 1_000_000
     c = Comparador(list(range(n)))
-    punto_de_rotacion(n, c)
+    rotation_point(n, c)
     print(f"con n = 1 000 000 sin rotar: {c.veces} comparaciones; la fuerza bruta "
           f"haría {miles(n - 1)}")
 
@@ -225,12 +225,12 @@ def cota_minima():
           f"{'ceil(log2 n)':>13} {'óptimo por DP':>14}")
     for n in [1, 2, 3, 4, 5, 7, 8, 9, 12, 100, 1000, 100_000]:
         adv = Adversario(n)
-        k = punto_de_rotacion(n, adv)
+        k = rotation_point(n, adv)
         assert adv.vivas == {k}
         bruta = "—"
         if n <= 1000:
             adv2 = Adversario(n)
-            k2 = fuerza_bruta(n, adv2)
+            k2 = brute_force(n, adv2)
             assert adv2.vivas == {k2}
             bruta = str(adv2.veces)
         dp = str(optimo((1 << n) - 1, n)) if n <= 12 else "—"
@@ -246,7 +246,7 @@ def arbol_de_decision(n=10):
     for k in range(n):
         A = rotado(B, k)
         c = Comparador(A)
-        assert punto_de_rotacion(n, c) == k
+        assert rotation_point(n, c) == k
         caminos[k] = [(i, A[i] > A[j]) for i, j in c.preguntas]
     return caminos
 
@@ -267,7 +267,7 @@ def repetidos():
         fallos, peor = 0, 0
         for k in range(n):
             A = rotado([0] + [1] * (n - 1), k)
-            if punto_de_rotacion(n, Comparador(A)) != k:
+            if rotation_point(n, Comparador(A)) != k:
                 fallos += 1
             c = Comparador(A)
             assert minimo_con_repetidos(n, c) == k
@@ -298,21 +298,21 @@ def errores_plantados():
         for n, k in casos:
             A = rotado(list(range(n)), k)
             for t, ref in enumerate(["ultimo", "primero"]):
-                malos[t] += punto_de_rotacion(n, Comparador(A), ref) != k
+                malos[t] += rotation_point(n, Comparador(A), ref) != k
         f = [100 * m / len(casos) for m in malos]
         tabla[nombre] = f
         print(f"{nombre:>22} {len(casos):>6} {f[0]:>10.1f}% {f[1]:>8.1f}%")
     rotaciones_malas = set()
     for n in range(1, 60):
         for k in range(n):
-            if punto_de_rotacion(n, Comparador(rotado(list(range(n)), k)), "primero") != k:
+            if rotation_point(n, Comparador(rotado(list(range(n)), k)), "primero") != k:
                 rotaciones_malas.add(k)
     print(f"exhaustiva con n de 1 a 59: con A[0] falla solo cuando k = "
           f"{sorted(rotaciones_malas)} (y n >= 2)")
     A = rotado(B12, 0)
     print(f"sobre A = {' '.join(map(str, A))}: con A[0] devuelve "
-          f"{punto_de_rotacion(12, Comparador(A), 'primero')}, con A[n-1] devuelve "
-          f"{punto_de_rotacion(12, Comparador(A))}")
+          f"{rotation_point(12, Comparador(A), 'primero')}, con A[n-1] devuelve "
+          f"{rotation_point(12, Comparador(A))}")
     return tabla
 
 
@@ -331,7 +331,7 @@ def pruebas():
         B = sorted(rng.sample(range(-10 ** 6, 10 ** 6), n))
         k = rng.randrange(n)
         A = rotado(B, k)
-        assert punto_de_rotacion(n, Comparador(A)) == fuerza_bruta(n, Comparador(A)) == k
+        assert rotation_point(n, Comparador(A)) == brute_force(n, Comparador(A)) == k
         assert A[k] == min(A)
         comprobaciones += 2
 

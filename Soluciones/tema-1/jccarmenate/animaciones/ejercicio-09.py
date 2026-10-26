@@ -1,9 +1,9 @@
-"""Ejercicio 9: la mezcla "optimizada" y la cota inferior de la mezcla. Dos escenas:
+"""Ejercicio 9: el merge "optimizado" y la cota inferior del merge. Dos escenas:
 
     Intercambio  en la entrada intercalada a1 < b1 < ... < a5 < b5, intercambiar dos
                  vecinos que nunca se compararon deja las listas ordenadas y todas las
                  respuestas iguales, pero cambia la salida: hay que comparar los 2n - 1
-    Optimizada   la mezcla optimizada sobre esa entrada: 7 comparaciones, dos pares de
+    Optimizada   el merge optimizado sobre esa entrada: 7 comparaciones, dos pares de
                  vecinos sin comparar, y b5 antes que a5
 
     uv run --python 3.13 --with manim manim -ql ejercicio-09.py Intercambio
@@ -30,7 +30,7 @@ def color_de(nombre):
     return AZUL if nombre[0] == "a" else TEAL
 
 
-def mezcla_optimizada(I, D):
+def optimized_merge(I, D):
     """La de ejercicio-09.py, anotando los pares comparados."""
     R, i, j, comparados = [], 0, 0, []
     while len(I) - i > 1 and j < len(D):
@@ -74,7 +74,7 @@ def salida(nombres, y):
 class Intercambio(Scene):
     def construct(self):
         narr = Narrador()
-        self.add(titulo(r"Por qué mezclar cuesta $2n - 1$ comparaciones"))
+        self.add(titulo(r"Por qué el merge cuesta $2n - 1$ comparaciones"))
         r = Recta()
         listas = VGroup(formula(r"I = (a_1, \dots, a_5)", tam=36, color=AZUL),
                         formula(r"D = (b_1, \dots, b_5)", tam=36, color=TEAL))
@@ -127,7 +127,7 @@ class Intercambio(Scene):
 class Optimizada(Scene):
     def construct(self):
         narr = Narrador()
-        self.add(titulo(r"La mezcla optimizada sobre la entrada del adversario"))
+        self.add(titulo(r"El merge optimizado sobre la entrada del adversario"))
         r = Recta()
         cod = rotulo(r"\texttt{while len(I) - i > 1 and j < len(D)}", 30, ROJO)
         cod.move_to(UP * 2.4)
@@ -135,7 +135,7 @@ class Optimizada(Scene):
             r"Deja de comparar cuando a $I$ le queda un solo elemento"))
         I = list(range(1, 2 * N + 1, 2))
         D = list(range(2, 2 * N + 1, 2))
-        res, comparados = mezcla_optimizada(I, D)
+        res, comparados = optimized_merge(I, D)
         final = salida([NOMBRES[w - 1] for w in res], -1.9)
         cuenta = formula(r"\text{comparaciones: } 0", tam=36).move_to(RIGHT * 4.6 + DOWN * 1.0)
         self.play(FadeIn(cuenta))

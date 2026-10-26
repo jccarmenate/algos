@@ -30,34 +30,34 @@ YS = [1.55, 0.5, -0.55, -1.6]
 def gale_shapley(pref_a, pref_b, uno_antes=False):
     """La versión de ejercicio-12.py (con cola), guardando cada propuesta. Con
     uno_antes = True es el error de la sección 7."""
-    rango = [{a: i for i, a in enumerate(pref_b[b])} for b in range(len(pref_b))]
-    siguiente = [0] * len(pref_a)
-    pareja_de_b = [None] * len(pref_b)
+    rank = [{a: i for i, a in enumerate(pref_b[b])} for b in range(len(pref_b))]
+    next_choice = [0] * len(pref_a)
+    match_of_b = [None] * len(pref_b)
     corte = 1 if uno_antes else 0
 
-    def le_queda(a):
-        return siguiente[a] < len(pref_a[a]) - corte
+    def has_more(a):
+        return next_choice[a] < len(pref_a[a]) - corte
 
-    libres = deque(a for a in range(len(pref_a)) if le_queda(a))
+    free = deque(a for a in range(len(pref_a)) if has_more(a))
     traza = []
-    while libres:
-        a = libres.popleft()
-        lugar = siguiente[a]
+    while free:
+        a = free.popleft()
+        lugar = next_choice[a]
         b = pref_a[a][lugar]
-        siguiente[a] += 1
-        actual = pareja_de_b[b]
-        if actual is None:
-            pareja_de_b[b], rechazado = a, None
-        elif rango[b][a] < rango[b][actual]:
-            pareja_de_b[b], rechazado = a, actual
+        next_choice[a] += 1
+        current = match_of_b[b]
+        if current is None:
+            match_of_b[b], rejected = a, None
+        elif rank[b][a] < rank[b][current]:
+            match_of_b[b], rejected = a, current
         else:
-            rechazado = a
-        solo = rechazado is not None and not le_queda(rechazado)
-        traza.append((a, lugar, b, actual, pareja_de_b[b], rechazado, solo))
-        if rechazado is not None and le_queda(rechazado):
-            libres.append(rechazado)
+            rejected = a
+        solo = rejected is not None and not has_more(rejected)
+        traza.append((a, lugar, b, current, match_of_b[b], rejected, solo))
+        if rejected is not None and has_more(rejected):
+            free.append(rejected)
     M = [None] * len(pref_a)
-    for b, a in enumerate(pareja_de_b):
+    for b, a in enumerate(match_of_b):
         if a is not None:
             M[a] = b
     return M, traza
@@ -66,13 +66,13 @@ def gale_shapley(pref_a, pref_b, uno_antes=False):
 def bloqueantes(M, pref_a, pref_b, vieja=False):
     """Las parejas bloqueantes de M. Con vieja = True, la definición de listas
     completas: solo mira pares en los que los dos tienen pareja."""
-    pareja_de_b = {b: a for a, b in enumerate(M) if b is not None}
+    match_of_b = {b: a for a, b in enumerate(M) if b is not None}
     res = []
     for a in range(len(pref_a)):
         for b in pref_a[a]:
             if M[a] == b:
                 continue
-            otro = pareja_de_b.get(b)
+            otro = match_of_b.get(b)
             if vieja and (M[a] is None or otro is None):
                 continue
             quiere_a = M[a] is None or pref_a[a].index(b) < pref_a[a].index(M[a])
@@ -127,7 +127,7 @@ class Propuestas(Scene):
         self.wait(1)
         M, traza = gale_shapley(PREF_A, PREF_B)
         juntos = {}
-        for a, lugar, b, antes, despues, rechazado, solo in traza:
+        for a, lugar, b, antes, despues, rejected, solo in traza:
             item = ins.item(a, lugar)
             flecha = Arrow(ins.A[a][0].get_right(), ins.B[b][0].get_left(), buff=0.05,
                            color=AMARILLO, stroke_width=5, tip_length=0.18)
@@ -145,15 +145,15 @@ class Propuestas(Scene):
             else:
                 dicho = rf"$b_{b + 1}$ prefiere a $a_{antes + 1}$: rechaza a $a_{a + 1}$"
                 anims.append(Flash(ins.B[b][0], color=ROJO, flash_radius=0.45))
-            if rechazado is not None:
-                tachar = ins.item(rechazado, PREF_A[rechazado].index(b))
+            if rejected is not None:
+                tachar = ins.item(rejected, PREF_A[rejected].index(b))
                 anims.append(tachar.animate.set_color(ROJO).set_opacity(0.45))
             self.play(*anims, *narr.decir(dicho), run_time=0.8)
             if solo:
-                self.play(ins.A[rechazado][0].animate.set_stroke(APAGADO, 3),
-                          ins.A[rechazado][1].animate.set_color(APAGADO),
-                          *narr.decir(rf"$a_{rechazado + 1}$ agotó su lista: "
-                                      r"\texttt{le\_queda} es falso y se queda solo",
+                self.play(ins.A[rejected][0].animate.set_stroke(APAGADO, 3),
+                          ins.A[rejected][1].animate.set_color(APAGADO),
+                          *narr.decir(rf"$a_{rejected + 1}$ agotó su lista: "
+                                      r"\texttt{has\_more} es falso y se queda solo",
                                       color=AMARILLO))
                 self.wait(0.8)
         sin_pareja = [b for b in range(4) if b not in M]
@@ -171,7 +171,7 @@ class Verificador(Scene):
         narr = Narrador()
         self.add(titulo(r"El error de rendirse una propuesta antes"))
         ins = Instancia()
-        cod = rotulo(r"\texttt{siguiente[a] < len(pref\_a[a]) - 1}", 30, ROJO)
+        cod = rotulo(r"\texttt{next\_choice[a] < len(pref\_a[a]) - 1}", 30, ROJO)
         cod.move_to(UP * 2.45)
         self.play(FadeIn(ins.todo()), FadeIn(cod), *narr.decir(
             r"El proponente se rinde sin probar al último de su lista"))

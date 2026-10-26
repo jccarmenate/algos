@@ -35,25 +35,25 @@ class Comparador:
         return a <= b
 
 
-def corte(A, B, menor_o_igual):
+def split_point(A, B, less_equal):
     """i* = cuántos elementos de A hay entre los n menores. Es la cantidad de k con
     A[k] <= B[n-1-k], y esa condición es verdadera para k < i* y falsa después."""
     n = len(A)
     lo, hi = 0, n                       # invariante: c_k vale para k < lo, no vale para k >= hi
     while lo < hi:
         m = (lo + hi) // 2
-        if menor_o_igual(A[m], B[n - 1 - m]):
+        if less_equal(A[m], B[n - 1 - m]):
             lo = m + 1
         else:
             hi = m
     return lo
 
 
-def mediana(A, B, menor_o_igual, centinela_python=False):
+def median(A, B, less_equal, centinela_python=False):
     """El n-ésimo menor de los 2n elementos. `centinela_python = True` es el error
     plantado de la sección 7: confiar en que A[-1] y B[-1] se portan como -infinito."""
     n = len(A)
-    i = corte(A, B, menor_o_igual)
+    i = split_point(A, B, less_equal)
     j = n - i                           # elementos de B entre los n menores
     if not centinela_python:
         if i == 0:
@@ -61,7 +61,7 @@ def mediana(A, B, menor_o_igual, centinela_python=False):
         if j == 0:
             return A[n - 1]
     a, b = A[i - 1], B[j - 1]           # con i = 0, A[-1] es el ÚLTIMO de A, no -infinito
-    return b if menor_o_igual(a, b) else a
+    return b if less_equal(a, b) else a
 
 
 def oraculo(A, B):
@@ -100,11 +100,11 @@ def ejemplo_chico():
     for k in range(n):
         print(f"{k:>2} {A[k]:>5} {B[n - 1 - k]:>9}  {'sí' if A[k] <= B[n - 1 - k] else 'no'}")
     c = Comparador()
-    i = corte(A, B, c)
+    i = split_point(A, B, c)
     print(f"i* = {i}: los n menores son A[0..{i - 1}] y B[0..{n - i - 1}]; "
           f"la búsqueda binaria usó {c.veces} comparaciones")
     c = Comparador()
-    m = mediana(A, B, c)
+    m = median(A, B, c)
     print(f"mediana = max(A[{i - 1}], B[{n - i - 1}]) = max({A[i - 1]}, {B[n - i - 1]}) "
           f"= {m}, con {c.veces} comparaciones en total; el oráculo dice {oraculo(A, B)}")
 
@@ -119,13 +119,13 @@ def invariante_vigilado():
         B = sorted(rng.randrange(40) for _ in range(n))
         c = [A[k] <= B[n - 1 - k] for k in range(n)]
         assert all(c[k] >= c[k + 1] for k in range(n - 1))      # verdaderos y después falsos
-        i = corte(A, B, Comparador())
+        i = split_point(A, B, Comparador())
         assert i == sum(c)
         # los n menores, con el desempate "A primero", son A[:i] y B[:n-i]
         orden = sorted([(v, 0, k) for k, v in enumerate(A)] + [(v, 1, k) for k, v in enumerate(B)])
         menores = orden[:n]
         assert sum(1 for _, lista, _ in menores if lista == 0) == i
-        assert mediana(A, B, Comparador()) == oraculo(A, B)
+        assert median(A, B, Comparador()) == oraculo(A, B)
         casos += 1
     print(f"{miles(casos)} pares de arreglos con repetidos: la condición es monótona, el "
           f"corte cuenta los elementos de A entre los n menores, y la mediana es correcta")
@@ -144,7 +144,7 @@ def peor_del_algoritmo(n):
     peor = 0
     for A, B in interleavings(n):
         c = Comparador()
-        assert mediana(A, B, c) == oraculo(A, B)
+        assert median(A, B, c) == oraculo(A, B)
         peor = max(peor, c.veces)
     return peor
 
@@ -202,7 +202,7 @@ def comparaciones():
             AA = [v * 4 for v in range(n)]
             BB = sorted([4 * k - 1 for k in range(1, i + 1)] + [4 * n + 4 * k for k in range(n - i)])
             c = Comparador()
-            assert mediana(AA, BB, c) == oraculo(AA, BB)
+            assert median(AA, BB, c) == oraculo(AA, BB)
             peor = max(peor, c.veces)
         print(f"{miles(n):>9}: peor medido {peor}, ceil(log2(n+1)) + 1 = "
               f"{techo_log2(n + 1) + 1}, información {techo_log2(2 * n)}")
@@ -239,13 +239,13 @@ def errores_plantados():
     for nombre, casos in baterias.items():
         fila = []
         for bug in (False, True):
-            malos = sum(mediana(A, B, Comparador(), bug) != oraculo(A, B) for A, B in casos)
+            malos = sum(median(A, B, Comparador(), bug) != oraculo(A, B) for A, B in casos)
             fila.append(100 * malos / len(casos))
         fallos[nombre] = fila
         print(f"{nombre:>22} {miles(len(casos)):>6} {fila[0]:>8.1f}% {fila[1]:>9.1f}%")
-    extremos = sum(corte(A, B, Comparador()) in (0, len(A))
+    extremos = sum(split_point(A, B, Comparador()) in (0, len(A))
                    for A, B in baterias["exhaustivo, n <= 4"])
-    malos = sum(mediana(A, B, Comparador(), True) != oraculo(A, B)
+    malos = sum(median(A, B, Comparador(), True) != oraculo(A, B)
                 for A, B in baterias["exhaustivo, n <= 4"])
     print(f"en el exhaustivo, el corte cae en un extremo (i* = 0 o i* = n) en {extremos} "
           f"casos, y la versión con A[-1] falla en {malos}")
@@ -271,14 +271,14 @@ def pruebas():
         A = sorted(rng.randrange(r) for _ in range(n))
         B = sorted(rng.randrange(r) for _ in range(n))
         c = Comparador()
-        assert mediana(A, B, c) == oraculo(A, B)
+        assert median(A, B, c) == oraculo(A, B)
         assert c.veces <= techo_log2(n + 1) + 1
         comprobaciones += 1
 
     # (b) todos los intercalados para n <= 9
     for n in range(1, 10):
         for A, B in interleavings(n):
-            assert mediana(A, B, Comparador()) == oraculo(A, B)
+            assert median(A, B, Comparador()) == oraculo(A, B)
             comprobaciones += 1
 
     # (c) cada una de las 2n respuestas posibles aparece en algún intercalado
@@ -317,7 +317,7 @@ def _guardar(fig, nombre):
 
 def figura_corte():
     A, B, n = EJ_A, EJ_B, len(EJ_A)
-    i = corte(A, B, Comparador())
+    i = split_point(A, B, Comparador())
     j = n - i
     med = oraculo(A, B)
     fig, ax = plt.subplots(figsize=(6.6, 2.4))

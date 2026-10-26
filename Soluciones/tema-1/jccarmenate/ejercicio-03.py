@@ -24,14 +24,14 @@ import matplotlib.pyplot as plt
 # Cada método suma a self.costo lo que gasta: una unidad por celda leída o escrita
 # y una por comparación. Así el script mide el costo en el modelo y no en segundos.
 
-class PilaIngenua:
-    """El primer intento: una sola variable con el mínimo. Al desapilar el mínimo
+class NaiveMinStack:
+    """El primer intento: una sola variable con el mínimo. Al hacer pop del mínimo
     hay que recalcularlo recorriendo toda la pila."""
 
     def __init__(self):
         self.S, self.m, self.costo = [], None, 0
 
-    def apilar(self, x):
+    def push(self, x):
         self.costo += 1                              # escribir x
         if not self.S or x < self.m:
             self.m = x
@@ -40,7 +40,7 @@ class PilaIngenua:
             self.costo += 1                          # comparar
         self.S.append(x)
 
-    def desapilar(self):
+    def pop(self):
         x = self.S.pop()
         self.costo += 2                              # leer x y compararlo con m
         if x == self.m and self.S:
@@ -48,22 +48,22 @@ class PilaIngenua:
             self.costo += 2 * len(self.S)
         return x
 
-    def tope(self):
+    def top(self):
         self.costo += 1
         return self.S[-1]
 
-    def minimo(self):
+    def min(self):
         self.costo += 1
         return self.m
 
 
-class PilaConMinimo:
+class MinStack:
     """Dos pilas paralelas: S guarda los elementos, y M[i] es el mínimo de S[0..i]."""
 
     def __init__(self):
         self.S, self.M, self.costo = [], [], 0
 
-    def apilar(self, x):
+    def push(self, x):
         if self.M:
             m = x if x < self.M[-1] else self.M[-1]
             self.costo += 2                          # leer M[-1] y comparar
@@ -73,28 +73,28 @@ class PilaConMinimo:
         self.M.append(m)
         self.costo += 2                              # escribir en S y en M
 
-    def desapilar(self):
+    def pop(self):
         self.M.pop()
         self.costo += 2
         return self.S.pop()
 
-    def tope(self):
+    def top(self):
         self.costo += 1
         return self.S[-1]
 
-    def minimo(self):
+    def min(self):
         self.costo += 1
         return self.M[-1]
 
 
-class PilaCompacta:
+class CompactMinStack:
     """M guarda solo los récords: los S[i] que son <= todo lo que tienen debajo."""
 
     def __init__(self, estricta=False):
         self.S, self.M, self.costo = [], [], 0
         self.estricta = estricta                     # el error plantado: < en vez de <=
 
-    def apilar(self, x):
+    def push(self, x):
         self.S.append(x)
         self.costo += 1
         if self.M:
@@ -103,7 +103,7 @@ class PilaCompacta:
             self.M.append(x)
             self.costo += 1
 
-    def desapilar(self):
+    def pop(self):
         x = self.S.pop()
         self.costo += 3                              # sacar x, leer M[-1], comparar
         if x == self.M[-1]:
@@ -111,24 +111,24 @@ class PilaCompacta:
             self.costo += 1
         return x
 
-    def tope(self):
+    def top(self):
         self.costo += 1
         return self.S[-1]
 
-    def minimo(self):
+    def min(self):
         self.costo += 1
         return self.M[-1]
 
 
-class PilaCodificada:
+class EncodedMinStack:
     """Memoria extra O(1) para enteros: una sola variable m con el mínimo. Cuando
     llega un récord x < m se guarda 2x - m, que queda por debajo del mínimo nuevo y
-    permite recuperar el mínimo viejo al desapilar."""
+    permite recuperar el mínimo viejo al hacer pop."""
 
     def __init__(self):
         self.S, self.m, self.costo = [], None, 0
 
-    def apilar(self, x):
+    def push(self, x):
         if not self.S:
             self.S.append(x)
             self.m = x
@@ -139,7 +139,7 @@ class PilaCodificada:
             self.m = x
         self.costo += 3
 
-    def desapilar(self):
+    def pop(self):
         c = self.S.pop()
         self.costo += 3
         if c < self.m:                               # era un récord: el valor real es m
@@ -147,12 +147,12 @@ class PilaCodificada:
             return x
         return c
 
-    def tope(self):
+    def top(self):
         self.costo += 2
         c = self.S[-1]
         return self.m if c < self.m else c
 
-    def minimo(self):
+    def min(self):
         self.costo += 1
         return self.m
 
@@ -171,29 +171,29 @@ def miles(x):
 # 2. Las tablas que cita la prosa
 # --------------------------------------------------------------------------
 
-OPERACIONES = [("apilar", 5), ("apilar", 7), ("apilar", 3), ("apilar", 3),
-               ("apilar", 8), ("apilar", 1), ("desapilar", None),
-               ("desapilar", None), ("desapilar", None), ("apilar", 4)]
+OPERACIONES = [("push", 5), ("push", 7), ("push", 3), ("push", 3),
+               ("push", 8), ("push", 1), ("pop", None),
+               ("pop", None), ("pop", None), ("push", 4)]
 
 
 def ejemplo_chico():
     seccion("§2. Ejemplo chico: la pila paralela y la compacta, paso a paso")
-    p, c = PilaConMinimo(), PilaCompacta()
-    print(f"{'operación':>12}  {'S':<16} {'M paralela':<16} {'M compacta':<12} mínimo")
+    p, c = MinStack(), CompactMinStack()
+    print(f"{'operación':>12}  {'S':<16} {'M paralela':<16} {'M compacta':<12} min")
     estados = []
     for op, x in OPERACIONES:
-        if op == "apilar":
-            p.apilar(x)
-            c.apilar(x)
-            texto = f"apilar {x}"
+        if op == "push":
+            p.push(x)
+            c.push(x)
+            texto = f"push {x}"
         else:
-            p.desapilar()
-            c.desapilar()
-            texto = "desapilar"
-        assert p.minimo() == c.minimo() == min(p.S)
+            p.pop()
+            c.pop()
+            texto = "pop"
+        assert p.min() == c.min() == min(p.S)
         estados.append((texto, list(p.S), list(p.M), list(c.M)))
         print(f"{texto:>12}  {' '.join(map(str, p.S)):<16} {' '.join(map(str, p.M)):<16} "
-              f"{' '.join(map(str, c.M)):<12} {p.minimo()}")
+              f"{' '.join(map(str, c.M)):<12} {p.min()}")
     return estados
 
 
@@ -201,10 +201,10 @@ def secuencia_aleatoria(rng, largo, valor):
     ops, tam = [], 0
     for _ in range(largo):
         if tam == 0 or rng.random() < 0.55:
-            ops.append(("apilar", valor(rng)))
+            ops.append(("push", valor(rng)))
             tam += 1
         else:
-            ops.append(("desapilar", None))
+            ops.append(("pop", None))
             tam -= 1
     return ops
 
@@ -214,12 +214,12 @@ def invariante_vigilado():
     rng = random.Random(3)
     secuencias = operaciones = 0
     for _ in range(3000):
-        p = PilaConMinimo()
+        p = MinStack()
         for op, x in secuencia_aleatoria(rng, rng.randint(1, 60), lambda r: r.randrange(10)):
-            if op == "apilar":
-                p.apilar(x)
+            if op == "push":
+                p.push(x)
             else:
-                p.desapilar()
+                p.pop()
             assert len(p.M) == len(p.S)
             assert all(p.M[i] == min(p.S[:i + 1]) for i in range(len(p.S)))
             operaciones += 1
@@ -234,20 +234,20 @@ def costo_peor_caso():
     print(f"{'n':>6} {'estructura':>16} {'costo total':>12} {'peor operación':>15} "
           f"{'costo / operación':>18}")
     for n in [10, 100, 1000]:
-        # la secuencia mala para el primer intento: apilar n, n - 1, ..., 1 y
-        # después desapilar todo; cada desapilar saca el mínimo
-        ops = [("apilar", v) for v in range(n, 0, -1)] + [("desapilar", None)] * n
-        for nombre, clase in [("primer intento", PilaIngenua),
-                              ("paralela", PilaConMinimo)]:
+        # la secuencia mala para el primer intento: push n, n - 1, ..., 1 y
+        # después hacer pop hasta vaciarla; cada pop saca el mínimo
+        ops = [("push", v) for v in range(n, 0, -1)] + [("pop", None)] * n
+        for nombre, clase in [("primer intento", NaiveMinStack),
+                              ("paralela", MinStack)]:
             p, costos = clase(), []
             for op, x in ops:
                 antes = p.costo
-                if op == "apilar":
-                    p.apilar(x)
+                if op == "push":
+                    p.push(x)
                 else:
-                    p.desapilar()
+                    p.pop()
                 if p.S:
-                    assert p.minimo() == min(p.S)
+                    assert p.min() == min(p.S)
                     p.costo -= 1                     # la consulta no cuenta aquí
                 costos.append(p.costo - antes)
             resultados[(nombre, n)] = costos
@@ -260,25 +260,25 @@ def costo_por_operacion():
     seccion("§5. Costo máximo de cada operación sobre 200 000 operaciones al azar")
     rng = random.Random(5)
     ops = secuencia_aleatoria(rng, 200_000, lambda r: r.randrange(1000))
-    print(f"{'estructura':>14} {'apilar':>7} {'desapilar':>10} {'tope':>5} {'mínimo':>7}")
-    for nombre, clase in [("paralela", PilaConMinimo), ("compacta", PilaCompacta),
-                          ("codificada", PilaCodificada)]:
+    print(f"{'estructura':>14} {'push':>7} {'pop':>10} {'top':>5} {'min':>7}")
+    for nombre, clase in [("paralela", MinStack), ("compacta", CompactMinStack),
+                          ("codificada", EncodedMinStack)]:
         p = clase()
-        peor = {"apilar": 0, "desapilar": 0, "tope": 0, "mínimo": 0}
+        peor = {"push": 0, "pop": 0, "top": 0, "min": 0}
         for op, x in ops:
             antes = p.costo
-            if op == "apilar":
-                p.apilar(x)
+            if op == "push":
+                p.push(x)
             else:
-                p.desapilar()
+                p.pop()
             peor[op] = max(peor[op], p.costo - antes)
             if p.S:
-                for consulta, metodo in [("tope", p.tope), ("mínimo", p.minimo)]:
+                for consulta, metodo in [("top", p.top), ("min", p.min)]:
                     antes = p.costo
                     metodo()
                     peor[consulta] = max(peor[consulta], p.costo - antes)
-        print(f"{nombre:>14} {peor['apilar']:>7} {peor['desapilar']:>10} "
-              f"{peor['tope']:>5} {peor['mínimo']:>7}")
+        print(f"{nombre:>14} {peor['push']:>7} {peor['pop']:>10} "
+              f"{peor['top']:>5} {peor['min']:>7}")
 
 
 def armonico(n):
@@ -286,7 +286,7 @@ def armonico(n):
 
 
 def memoria_compacta():
-    seccion("§6. Cuántos récords guarda la pila compacta después de n apilar")
+    seccion("§6. Cuántos récords guarda la pila compacta después de n push")
     rng = random.Random(6)
     print(f"{'n':>6} {'decreciente':>12} {'permutación al azar':>20} {'H_n':>6} "
           f"{'valores en 0..9':>16}")
@@ -298,9 +298,9 @@ def memoria_compacta():
                                (lambda: [rng.randrange(10) for _ in range(n)], 200)]:
             tamanos = []
             for _ in range(veces):
-                p = PilaCompacta()
+                p = CompactMinStack()
                 for x in generar():
-                    p.apilar(x)
+                    p.push(x)
                 tamanos.append(len(p.M))
             fila.append(sum(tamanos) / len(tamanos))
         print(f"{n:>6} {fila[0]:>12.0f} {fila[1]:>20.2f} {armonico(n):>6.2f} "
@@ -314,15 +314,15 @@ def memoria_compacta():
 def falla(ops, estricta):
     """Corre la secuencia y consulta el mínimo después de cada operación. Devuelve
     None si todo sale bien, o la primera operación en que falla."""
-    p = PilaCompacta(estricta=estricta)
+    p = CompactMinStack(estricta=estricta)
     for k, (op, x) in enumerate(ops):
-        if op == "apilar":
-            p.apilar(x)
+        if op == "push":
+            p.push(x)
         else:
-            p.desapilar()
+            p.pop()
         if p.S:
             try:
-                if p.minimo() != min(p.S):
+                if p.min() != min(p.S):
                     return k
             except IndexError:                       # M vacía con S no vacía
                 return k
@@ -330,15 +330,15 @@ def falla(ops, estricta):
 
 
 def todas_las_secuencias(largo_max, valores):
-    """Todas las secuencias válidas (sin desapilar una pila vacía) de hasta largo_max
+    """Todas las secuencias válidas (sin pop sobre una pila vacía) de hasta largo_max
     operaciones con valores en `valores`."""
-    pasos = [("apilar", v) for v in valores] + [("desapilar", None)]
+    pasos = [("push", v) for v in valores] + [("pop", None)]
     salida = []
     for largo in range(1, largo_max + 1):
         for ops in itertools.product(pasos, repeat=largo):
             tam, valida = 0, True
             for op, _ in ops:
-                tam += 1 if op == "apilar" else -1
+                tam += 1 if op == "push" else -1
                 if tam < 0:
                     valida = False
                     break
@@ -374,24 +374,24 @@ def errores_plantados():
     # la secuencia más corta que lo rompe, buscada en orden de largo
     for ops in todas_las_secuencias(4, [0, 1]):
         if falla(ops, True) is not None:
-            texto = ", ".join(f"apilar {x}" if op == "apilar" else "desapilar"
+            texto = ", ".join(f"push {x}" if op == "push" else "pop"
                               for op, x in ops)
             print(f"la secuencia más corta que rompe la versión con <: {texto}")
             break
 
-    # el error aparece exactamente cuando se desapila una copia repetida del mínimo
+    # el error aparece exactamente cuando se hace pop de una copia repetida del mínimo
     repetido = 0
     for ops in baterias["exhaustivo, 3 valores"]:
         k = falla(ops, True)
         if k is not None:
-            p = PilaConMinimo()
+            p = MinStack()
             for op, x in ops[:k]:
-                p.apilar(x) if op == "apilar" else p.desapilar()
-            # justo antes del fallo se desapiló el mínimo y quedaba otra copia
-            repetido += (ops[k][0] == "desapilar" and p.S[-1] == p.M[-1]
+                p.push(x) if op == "push" else p.pop()
+            # justo antes del fallo se hizo pop del mínimo y quedaba otra copia
+            repetido += (ops[k][0] == "pop" and p.S[-1] == p.M[-1]
                          and p.S[:-1].count(p.S[-1]) >= 1)
     total = sum(falla(ops, True) is not None for ops in baterias["exhaustivo, 3 valores"])
-    print(f"en el exhaustivo, {repetido} de {total} fallos ocurren al desapilar el mínimo "
+    print(f"en el exhaustivo, {repetido} de {total} fallos ocurren al hacer pop del mínimo "
           f"cuando quedaba otra copia de él debajo")
     return fallos
 
@@ -406,17 +406,17 @@ def codificada():
     V = 1000
     peor_bajo, peor_alto, ops_total = 0, 0, 0
     for _ in range(3000):
-        p = PilaCodificada()
+        p = EncodedMinStack()
         oraculo = []
         for op, x in secuencia_aleatoria(rng, rng.randint(1, 60),
                                          lambda r: r.randint(-V, V)):
-            if op == "apilar":
-                p.apilar(x)
+            if op == "push":
+                p.push(x)
                 oraculo.append(x)
             else:
-                assert p.desapilar() == oraculo.pop()
+                assert p.pop() == oraculo.pop()
             if oraculo:
-                assert p.minimo() == min(oraculo) and p.tope() == oraculo[-1]
+                assert p.min() == min(oraculo) and p.top() == oraculo[-1]
             if p.S:
                 peor_bajo = min(peor_bajo, min(p.S))
                 peor_alto = max(peor_alto, max(p.S))
@@ -439,37 +439,37 @@ def pruebas():
     for _ in range(4000):
         valor = rng.choice([lambda r: r.randrange(5), lambda r: r.randrange(10**6),
                             lambda r: r.randint(-50, 50)])
-        estructuras = [PilaConMinimo(), PilaCompacta(), PilaCodificada(), PilaIngenua()]
+        estructuras = [MinStack(), CompactMinStack(), EncodedMinStack(), NaiveMinStack()]
         oraculo = []
         for op, x in secuencia_aleatoria(rng, rng.randint(1, 80), valor):
-            if op == "apilar":
+            if op == "push":
                 for e in estructuras:
-                    e.apilar(x)
+                    e.push(x)
                 oraculo.append(x)
             else:
                 esperado = oraculo.pop()
                 for e in estructuras:
-                    assert e.desapilar() == esperado
+                    assert e.pop() == esperado
             if oraculo:
                 for e in estructuras:
-                    assert e.minimo() == min(oraculo) and e.tope() == oraculo[-1]
+                    assert e.min() == min(oraculo) and e.top() == oraculo[-1]
                     comprobaciones += 1
 
     # (b) el invariante de la compacta: M es la sucesión de récords de S
     for _ in range(3000):
-        p = PilaCompacta()
+        p = CompactMinStack()
         for op, x in secuencia_aleatoria(rng, rng.randint(1, 60), lambda r: r.randrange(6)):
-            p.apilar(x) if op == "apilar" else p.desapilar()
+            p.push(x) if op == "push" else p.pop()
             records = [s for i, s in enumerate(p.S) if all(s <= t for t in p.S[:i])]
             assert p.M == records
             comprobaciones += 1
 
     # (c) costo constante: ninguna operación de las tres versiones pasa de 4
-    for clase in (PilaConMinimo, PilaCompacta, PilaCodificada):
+    for clase in (MinStack, CompactMinStack, EncodedMinStack):
         p = clase()
         for op, x in secuencia_aleatoria(rng, 50_000, lambda r: r.randrange(100)):
             antes = p.costo
-            p.apilar(x) if op == "apilar" else p.desapilar()
+            p.push(x) if op == "push" else p.pop()
             assert p.costo - antes <= 4
             comprobaciones += 1
 
@@ -519,8 +519,7 @@ def figura_traza(estados):
                                        edgecolor=ACENTO, lw=0.9))
             ax.text(x0 + 1.6, i + 0.5, str(m), ha="center", va="center", fontsize=8,
                     color=OSCURO)
-        ax.text(x0 + 1.05, -0.55, texto.replace("apilar ", "ap. ").replace(
-            "desapilar", "desap."), ha="center", va="top", fontsize=7.5, color=TINTA)
+        ax.text(x0 + 1.05, -0.55, texto, ha="center", va="top", fontsize=7.5, color=TINTA)
         ax.text(x0 + 0.5, len(S) + 0.25, "S", ha="center", fontsize=7, color=APAGADO)
         ax.text(x0 + 1.6, len(S) + 0.25, "M", ha="center", fontsize=7, color=ACENTO)
     ax.set_xlim(-0.3, 3.0 * len(estados))
@@ -538,9 +537,9 @@ def figura_costos(resultados):
         ax.plot(range(1, len(c) + 1), c, color=color, lw=1.4, label=nombre)
     ax.axvline(n + 0.5, color=APAGADO, lw=0.8, ls=":")
     ax.text(n / 2, max(resultados[("primer intento", n)]) * 0.92,
-            f"apilar {n}, {n - 1}, …, 1", ha="center", color=APAGADO, fontsize=8)
+            f"push {n}, {n - 1}, …, 1", ha="center", color=APAGADO, fontsize=8)
     ax.text(n * 1.5, max(resultados[("primer intento", n)]) * 0.92,
-            "desapilar todo", ha="center", color=APAGADO, fontsize=8)
+            "pop hasta vaciarla", ha="center", color=APAGADO, fontsize=8)
     ax.set_xlabel("operación")
     ax.set_ylabel("costo de la operación")
     ax.spines[["top", "right"]].set_visible(False)

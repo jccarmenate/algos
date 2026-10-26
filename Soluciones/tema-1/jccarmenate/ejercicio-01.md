@@ -37,8 +37,9 @@ Tres precisiones que el enunciado tiene que dar, y que no da:
   Para $n \log n$ depende, y la sección 4 dice cuánto.
 - **Qué quiere decir $\Theta(n^2)$.** Es una familia entera de funciones, y el factor
   cambia según cuál de ellas sea el costo. Suponemos que el costo es $c \cdot g(n)$ más
-  términos despreciables. La sección 5 muestra qué pasa si no se supone nada más que
-  $\Theta$.
+  términos despreciables, donde $g(n)$ es la función de adentro de la $\Theta$ ($n^2$ o
+  $n \log n$) y $c > 0$ es una constante. La sección 5 muestra qué pasa si no se supone
+  nada más que $\Theta$.
 - **La base del logaritmo.** No importa: en la cuenta solo aparece un cociente de
   logaritmos.
 

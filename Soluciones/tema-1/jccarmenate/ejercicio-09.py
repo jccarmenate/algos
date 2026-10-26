@@ -1,4 +1,4 @@
-"""Ejercicio 9 del Tema 1: una mezcla "optimizada" que la cota mínima delata.
+"""Ejercicio 9 del Tema 1: un merge "optimizado" que la cota mínima delata.
 
     python ejercicio-09.py
 
@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 
 # --------------------------------------------------------------------------
-# 1. Las dos mezclas
+# 1. Los dos merges
 # --------------------------------------------------------------------------
 
 class Comparador:
@@ -31,10 +31,10 @@ class Comparador:
         return a <= b
 
 
-def mezcla(I, D, menor_o_igual):
+def merge(I, D, less_equal):
     R, i, j = [], 0, 0
     while i < len(I) and j < len(D):
-        if menor_o_igual(I[i], D[j]):
+        if less_equal(I[i], D[j]):
             R.append(I[i])
             i += 1
         else:
@@ -43,11 +43,11 @@ def mezcla(I, D, menor_o_igual):
     return R + I[i:] + D[j:]
 
 
-def mezcla_optimizada(I, D, menor_o_igual):
+def optimized_merge(I, D, less_equal):
     """Deja de comparar cuando a I le queda un solo elemento y lo pone al final."""
     R, i, j = [], 0, 0
     while len(I) - i > 1 and j < len(D):
-        if menor_o_igual(I[i], D[j]):
+        if less_equal(I[i], D[j]):
             R.append(I[i])
             i += 1
         else:
@@ -84,21 +84,21 @@ def ejemplo_chico():
     seccion("§2. Ejemplo chico: n = 4")
     for I, D in [([1, 4, 6, 9], [2, 3, 7, 8]), ([2, 4, 6, 8], [1, 3, 5, 7])]:
         c = Comparador()
-        R = mezcla_optimizada(I, D, c)
-        print(f"I = {I}, D = {D}: optimizada {R} con {c.veces} comparaciones; "
+        R = optimized_merge(I, D, c)
+        print(f"I = {I}, D = {D}: optimizado {R} con {c.veces} comparaciones; "
               f"{'correcta' if R == sorted(I + D) else 'MAL'}")
 
 
 def peor_caso():
     seccion("§3. Comparaciones en el peor caso, sobre todas las entradas")
-    print(f"{'n':>3} {'entradas':>9} {'optimizada':>11} {'2n - 2':>7} {'mezcla':>7} "
-          f"{'2n - 1':>7} {'optimizada bien':>16}")
+    print(f"{'n':>3} {'entradas':>9} {'optimizado':>11} {'2n - 2':>7} {'merge':>7} "
+          f"{'2n - 1':>7} {'optimizado bien':>16}")
     for n in range(1, 11):
         peor_o = peor_m = bien = total = 0
         for I, D in intercalados(n):
             c1, c2 = Comparador(), Comparador()
-            R = mezcla_optimizada(I, D, c1)
-            mezcla(I, D, c2)
+            R = optimized_merge(I, D, c1)
+            merge(I, D, c2)
             peor_o, peor_m = max(peor_o, c1.veces), max(peor_m, c2.veces)
             bien += R == sorted(I + D)
             total += 1
@@ -112,23 +112,23 @@ def adversario(n=5):
     D = list(range(1, 2 * n, 2))             # b_k = 2k + 1
     nombre = lambda v: f"a{v // 2 + 1}" if v % 2 == 0 else f"b{v // 2 + 1}"
     c = Comparador()
-    R = mezcla_optimizada(I, D, c)
+    R = optimized_merge(I, D, c)
     vecinos = [(v, v + 1) for v in range(2 * n - 1)]
     comparados = {tuple(sorted(p)) for p in c.pares}
     sin_comparar = [p for p in vecinos if p not in comparados]
-    print("salida de la optimizada:", " ".join(nombre(v) for v in R))
-    print("salida correcta:        ", " ".join(nombre(v) for v in sorted(I + D)))
+    print("salida del optimizado:", " ".join(nombre(v) for v in R))
+    print("salida correcta:      ", " ".join(nombre(v) for v in sorted(I + D)))
     print(f"comparaciones: {c.veces}; pares de vecinos: {len(vecinos)}; sin comparar: "
           + ", ".join(f"({nombre(a)}, {nombre(b)})" for a, b in sin_comparar))
-    # intercambiar el último par sin comparar: la optimizada no distingue las dos entradas
+    # intercambiar el último par sin comparar: el optimizado no distingue las dos entradas
     a, b = sin_comparar[-1]
     I2 = [b if v == a else v for v in I]
     D2 = [a if v == b else v for v in D]
     c2 = Comparador()
-    R2 = mezcla_optimizada(I2, D2, c2)
+    R2 = optimized_merge(I2, D2, c2)
     respuestas = [x <= y for x, y in c.pares] == [x <= y for x, y in c2.pares]
     print(f"con {nombre(a)} y {nombre(b)} intercambiados: mismas respuestas a las "
-          f"comparaciones: {respuestas}; la optimizada acierta: {R2 == sorted(I2 + D2)}")
+          f"comparaciones: {respuestas}; el optimizado acierta: {R2 == sorted(I2 + D2)}")
     return I, D, c.pares, sin_comparar
 
 
@@ -137,10 +137,10 @@ def cuando_falla():
     total = coinciden = 0
     for n in range(1, 11):
         for I, D in intercalados(n):
-            R = mezcla_optimizada(I, D, Comparador())
+            R = optimized_merge(I, D, Comparador())
             coinciden += (R == sorted(I + D)) == (I[-1] > D[-1])
             total += 1
-    print(f"en las {miles(total)} entradas con n de 1 a 10, la optimizada acierta si y "
+    print(f"en las {miles(total)} entradas con n de 1 a 10, el optimizado acierta si y "
           f"solo si el máximo está en I: se cumple en {miles(coinciden)}")
 
 
@@ -172,12 +172,12 @@ def baterias():
         return sorted(rng.sample(range(500), n)), sorted(rng.sample(range(500, 1000), n))
 
     tabla = {}
-    print(f"{'batería':>20} {'casos':>6} {'mezcla':>7} {'optimizada':>11}")
+    print(f"{'batería':>20} {'casos':>6} {'merge':>7} {'optimizado':>11}")
     for nombre, g in [("al azar", al_azar), ("repartir alternando", alternando),
                       ("I con los grandes", I_arriba), ("I con los chicos", I_abajo)]:
         casos = [g() for _ in range(4000)]
-        f = [100 * sum(mezcla(I, D, Comparador()) != sorted(I + D) for I, D in casos) / 4000,
-             100 * sum(mezcla_optimizada(I, D, Comparador()) != sorted(I + D)
+        f = [100 * sum(merge(I, D, Comparador()) != sorted(I + D) for I, D in casos) / 4000,
+             100 * sum(optimized_merge(I, D, Comparador()) != sorted(I + D)
                        for I, D in casos) / 4000]
         tabla[nombre] = f
         print(f"{nombre:>20} {len(casos):>6} {f[0]:>6.1f}% {f[1]:>10.1f}%")
@@ -193,35 +193,35 @@ def pruebas():
     comprobaciones = 0
     rng = random.Random(2026)
 
-    # (a) la mezcla correcta, contra sorted, con repetidos y largos distintos
+    # (a) el merge correcto, contra sorted, con repetidos y largos distintos
     for _ in range(20_000):
         I = sorted(rng.randrange(20) for _ in range(rng.randint(0, 30)))
         D = sorted(rng.randrange(20) for _ in range(rng.randint(0, 30)))
         c = Comparador()
-        assert mezcla(I, D, c) == sorted(I + D)
+        assert merge(I, D, c) == sorted(I + D)
         assert c.veces <= max(0, len(I) + len(D) - 1)
         comprobaciones += 1
 
-    # (b) en todas las entradas sin repetidos con n <= 10: la mezcla compara todos los
-    #     pares de vecinos de la intercalada, y la optimizada nunca pasa de 2n - 2
+    # (b) en todas las entradas sin repetidos con n <= 10: el merge compara todos los
+    #     pares de vecinos de la intercalada, y el optimizado nunca pasa de 2n - 2
     for n in range(1, 11):
         for I, D in intercalados(n):
             c = Comparador()
-            mezcla_optimizada(I, D, c)
+            optimized_merge(I, D, c)
             assert c.veces <= max(0, 2 * n - 2)
             comprobaciones += 1
         I, D = list(range(0, 2 * n, 2)), list(range(1, 2 * n, 2))
         c = Comparador()
-        mezcla(I, D, c)
+        merge(I, D, c)
         assert {tuple(sorted(p)) for p in c.pares} == {(v, v + 1) for v in range(2 * n - 1)}
         comprobaciones += 1
 
-    # (c) la optimizada acierta si y solo si el máximo está en I, también con repetidos
+    # (c) el optimizado acierta si y solo si el máximo está en I, también con repetidos
     for _ in range(20_000):
         n = rng.randint(1, 20)
         I = sorted(rng.randrange(15) for _ in range(n))
         D = sorted(rng.randrange(15) for _ in range(n))
-        bien = mezcla_optimizada(I, D, Comparador()) == sorted(I + D)
+        bien = optimized_merge(I, D, Comparador()) == sorted(I + D)
         assert bien == (I[-1] >= D[-1])
         comprobaciones += 1
 
@@ -283,7 +283,7 @@ def figura_baterias(tabla):
     fig, ax = plt.subplots(figsize=(6.4, 2.9))
     nombres = list(tabla)
     ancho = 0.36
-    for k, (etiqueta, color) in enumerate([("mezcla", OSCURO), ("optimizada", ALARMA)]):
+    for k, (etiqueta, color) in enumerate([("merge", OSCURO), ("optimizado", ALARMA)]):
         alturas = [tabla[b][k] for b in nombres]
         pos = [i + (k - 0.5) * ancho for i in range(len(nombres))]
         ax.bar(pos, alturas, ancho, color=color, label=etiqueta)
@@ -291,7 +291,7 @@ def figura_baterias(tabla):
             ax.text(xx, h + 1.5, f"{h:.0f}", ha="center", fontsize=7, color=color)
     ax.set_xticks(range(len(nombres)))
     ax.set_xticklabels(nombres, fontsize=8)
-    ax.set_ylabel("% de mezclas mal")
+    ax.set_ylabel("% de merges mal")
     ax.set_ylim(0, 112)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color=REGLA, lw=0.6)

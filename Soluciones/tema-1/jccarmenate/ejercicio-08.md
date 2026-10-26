@@ -45,7 +45,12 @@ Que puedan ser a lo sumo dos es la primera cuenta:
 
 ## 2. Un ejemplo chico antes del algoritmo
 
-La primera pasada del algoritmo de la sección 3 sobre `A B C A B A D B A E A B`:
+La primera pasada del algoritmo de la sección 3 sobre `A B C A B A D B A E A B`. El
+algoritmo tiene dos lugares, cada uno con un **candidato** ($c_1$ o $c_2$) y un
+**contador** ($k_1$ o $k_2$) de copias vivas de ese candidato; un contador en 0 quiere
+decir que el lugar está libre, y la tabla lo marca con –. Cada fila es el estado
+después de leer $x = A[i]$. La línea de los tríos y la de "sin verificar" se explican
+más abajo:
 
 ```
  i  x   c1  k1   c2  k2
@@ -87,7 +92,7 @@ se pueda más. Entonces quedan a lo sumo dos valores distintos, y los buscados t
 que estar entre ellos. Recordar dos sobrevivientes pide dos pares candidato-contador.
 
 ```python
-def primera_pasada(A):
+def first_pass(A):
     c1 = c2 = None
     k1 = k2 = 0
     for x in A:
@@ -104,8 +109,8 @@ def primera_pasada(A):
             k2 -= 1
     return c1, k1, c2, k2
 
-def mas_de_un_tercio(A):
-    c1, k1, c2, k2 = primera_pasada(A)
+def more_than_third(A):
+    c1, k1, c2, k2 = first_pass(A)
     candidatos = {c for c, k in ((c1, k1), (c2, k2)) if k > 0}
     return {c for c in candidatos if 3 * A.count(c) > len(A)}
 ```
@@ -143,7 +148,7 @@ como copia viva de un candidato o dentro de un trío de tres distintos, que es e
 invariante (T). En mejor calidad: [MP4](animaciones/ejercicio-08-trios.mp4).*
 
 **Teorema.** Al terminar la primera pasada, todo elemento que aparece más de $n/3$ veces
-es un candidato vivo. En consecuencia `mas_de_un_tercio` es correcta, con tiempo $O(n)$
+es un candidato vivo. En consecuencia `more_than_third` es correcta, con tiempo $O(n)$
 y memoria $O(1)$.
 
 *Demostración.* Por (T), al terminar, $A$ se parte en $t$ tríos de distintos y
@@ -180,8 +185,8 @@ vivos. No dice que los candidatos vivos tengan más de un tercio. El atajo que s
 la segunda pasada,
 
 ```python
-def sin_verificar(A):
-    c1, k1, c2, k2 = primera_pasada(A)
+def unverified(A):
+    c1, k1, c2, k2 = first_pass(A)
     return {c for c, k in ((c1, k1), (c2, k2)) if k > 0}
 ```
 
@@ -194,8 +199,12 @@ en 20 000 arreglos de cinco símbolos, el atajo deja afuera un elemento correcto
 
 ## 5. Qué generadores de pruebas detectan el atajo
 
-El porcentaje de arreglos en que cada versión se equivoca, según el generador. La
-última columna es una variante que estudiamos en la sección 6.
+El porcentaje de arreglos en que cada versión se equivoca, según el generador. Cada
+generador fabrica arreglos de una forma distinta: **dos plantados** mete dos elementos
+con más de $n/3$ apariciones cada uno, **uno plantado** mete uno solo, **mayoría
+plantada** mete uno con más de $n/2$, y los de **dos**, **tres** y **cinco símbolos**
+eligen cada elemento al azar entre esa cantidad de valores. La última columna es una
+variante que estudiamos en la sección 6.
 
 ```
         generador  verificado  sin verificar  orden malo

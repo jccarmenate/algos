@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 # 1. Los algoritmos
 # --------------------------------------------------------------------------
 
-def mochila(w, v, W, ascendente=False):
+def knapsack(w, v, W, ascendente=False):
     """Programación dinámica con un arreglo de W + 1 celdas. mejor[c] es el mayor valor
     que cabe en capacidad c usando los objetos vistos. Devuelve (valor, celdas
     actualizadas). ascendente = True es el error plantado de la sección 6."""
@@ -94,7 +94,7 @@ def cien(x):
 def ejemplo_chico():
     seccion("§2. Ejemplo chico: 4 objetos")
     w, v, W = [3, 4, 5, 9], [4, 5, 6, 11], 12
-    valor, celdas = mochila(w, v, W)
+    valor, celdas = knapsack(w, v, W)
     print(f"pesos {w}, valores {v}, capacidad {W}: mejor valor {valor} "
           f"(el oráculo dice {mochila_bruta(w, v, W)}), {celdas} celdas actualizadas")
     print(f"bits de la entrada: {tamano(w, v, W)}")
@@ -114,7 +114,7 @@ def crecimiento():
     for k in range(6, 19, 2):
         W = 2 ** k
         w = [max(1, int(f * W)) for f in fracciones]
-        _, celdas = mochila(w, v, W)
+        _, celdas = knapsack(w, v, W)
         b = tamano(w, v, W)
         filas.append((b, celdas))
         razon = "—" if previo is None else f"{celdas / previo:.2f}"
@@ -172,15 +172,15 @@ def errores_plantados():
     for nombre, g in [("al azar", al_azar), ("W < 2·peso mínimo", capacidad_chica),
                       ("un solo objeto", un_objeto)]:
         casos = [g() for _ in range(3000)]
-        f = [100 * sum(mochila(w, v, W)[0] != mochila_bruta(w, v, W) for w, v, W in casos)
+        f = [100 * sum(knapsack(w, v, W)[0] != mochila_bruta(w, v, W) for w, v, W in casos)
              / len(casos),
-             100 * sum(mochila(w, v, W, True)[0] != mochila_bruta(w, v, W)
+             100 * sum(knapsack(w, v, W, True)[0] != mochila_bruta(w, v, W)
                        for w, v, W in casos) / len(casos)]
         tabla[nombre] = f
         print(f"{nombre:>20} {len(casos):>6} {f[0]:>11.1f}% {f[1]:>10.1f}%")
     w, v, W = [3], [5], 9
     print(f"un objeto de peso 3 y valor 5, capacidad 9: descendente "
-          f"{mochila(w, v, W)[0]}, ascendente {mochila(w, v, W, True)[0]}")
+          f"{knapsack(w, v, W)[0]}, ascendente {knapsack(w, v, W, True)[0]}")
     return tabla
 
 
@@ -199,7 +199,7 @@ def pruebas():
         w = [rng.randint(1, 30) for _ in range(n)]
         v = [rng.randint(0, 30) for _ in range(n)]
         W = rng.randint(0, 80)
-        valor, celdas = mochila(w, v, W)
+        valor, celdas = knapsack(w, v, W)
         assert valor == mochila_bruta(w, v, W)
         assert celdas == sum(max(0, W - wi + 1) for wi in w)
         comprobaciones += 2
@@ -210,7 +210,7 @@ def pruebas():
         w = [rng.randint(1, 15) for _ in range(n)]
         v = [rng.randint(0, 20) for _ in range(n)]
         W = rng.randint(0, 50)
-        assert mochila(w, v, W, True)[0] == mochila_con_repeticion(w, v, W)
+        assert knapsack(w, v, W, True)[0] == mochila_con_repeticion(w, v, W)
         comprobaciones += 1
 
     # (c) con W < 2·(peso mínimo), las dos versiones coinciden
@@ -219,7 +219,7 @@ def pruebas():
         w = [rng.randint(5, 15) for _ in range(n)]
         v = [rng.randint(0, 20) for _ in range(n)]
         W = rng.randint(0, 2 * min(w) - 1)
-        assert mochila(w, v, W)[0] == mochila(w, v, W, True)[0]
+        assert knapsack(w, v, W)[0] == knapsack(w, v, W, True)[0]
         comprobaciones += 1
 
     print(f"{miles(comprobaciones)} comprobaciones, 0 fallos")

@@ -44,8 +44,8 @@ class Fila(Scene):
         self.add(titulo(r"Por qué la fila se recorre de mayor a menor"))
         obj = formula(rf"\text{{un objeto: peso }} {PESO}, \text{{ valor }} {VALOR}", tam=38,
                       color=AMARILLO).move_to(UP * 2.45)
-        cod = formula(r"\texttt{mejor}[c] = \max(\texttt{mejor}[c],\ "
-                      r"\texttt{mejor}[c - 3] + 5)", tam=36).move_to(UP * 1.75)
+        cod = formula(r"\texttt{best}[c] = \max(\texttt{best}[c],\ "
+                      r"\texttt{best}[c - 3] + 5)", tam=36).move_to(UP * 1.75)
         filas = {}
         for y, desc, nombre, color in ((0.45, True, r"de mayor a menor", VERDE),
                                        (-1.55, False, r"de menor a mayor", ROJO)):

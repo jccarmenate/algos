@@ -1,4 +1,4 @@
-# Ejercicio 9 ★★ · Una mezcla "optimizada" que la cota inferior delata
+# Ejercicio 9 ★★ · Un merge "optimizado" que la cota inferior delata
 
 > Una mezcla "optimizada" de dos listas ordenadas de largo $n$ deja de comparar cuando a
 > la primera lista le queda un solo elemento, y lo pone al final. Cuenta cuántas
@@ -7,11 +7,11 @@
 
 Este ejercicio usa una cota inferior para algo distinto de lo habitual. En vez de decir
 "no se puede hacer más rápido", la usamos como especificación: un algoritmo que afirma
-hacer menos trabajo que una cota demostrada tiene que estar mal. Que mezclar dos listas
-de largo $n$ cuesta $2n - 1$ comparaciones en el peor caso es un resultado clásico
-(Knuth, 1998, §5.3.2). Vamos a contar las comparaciones de la variante, ver que son
-menos, y concluir que es incorrecta sin ejecutarla. Después, la demostración de la cota
-nos va a decir exactamente qué entrada la rompe.
+hacer menos trabajo que una cota demostrada tiene que estar mal. Que hacer el merge de
+dos listas de largo $n$ cuesta $2n - 1$ comparaciones en el peor caso es un resultado
+clásico (Knuth, 1998, §5.3.2). Vamos a contar las comparaciones de la variante, ver que
+son menos, y concluir que es incorrecta sin ejecutarla. Después, la demostración de la
+cota nos va a decir exactamente qué entrada la rompe.
 
 Todos los números de este documento los imprime [`ejercicio-09.py`](ejercicio-09.py),
 que además corre las pruebas y regenera las dos figuras. Solo necesita matplotlib:
@@ -22,12 +22,12 @@ python ejercicio-09.py
 
 ## 1. El problema
 
-**Mezcla.** Dadas dos listas ordenadas $I$ y $D$ de largo $n$, devolver la lista
+**Merge** (mezcla). Dadas dos listas ordenadas $I$ y $D$ de largo $n$, devolver la lista
 ordenada con sus $2n$ elementos. El costo es la cantidad de comparaciones entre
-elementos. La mezcla usual (Cormen et al., 2009, §2.3.1) y la variante del enunciado:
+elementos. El merge usual (Cormen et al., 2009, §2.3.1) y la variante del enunciado:
 
 ```python
-def mezcla(I, D):
+def merge(I, D):
     R, i, j = [], 0, 0
     while i < len(I) and j < len(D):
         if I[i] <= D[j]:
@@ -36,7 +36,7 @@ def mezcla(I, D):
             R.append(D[j]); j += 1
     return R + I[i:] + D[j:]
 
-def mezcla_optimizada(I, D):
+def optimized_merge(I, D):
     R, i, j = [], 0, 0
     while len(I) - i > 1 and j < len(D):      # se detiene con un solo elemento en I
         if I[i] <= D[j]:
@@ -59,7 +59,7 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 - **Las dos listas tienen el mismo largo.** La cota $2n - 1$ es para listas de largo $n$
   y $n$. Con largos muy distintos la historia cambia.
 - **Qué es "correcta" con repetidos.** Que la salida esté ordenada. Con valores
-  distintos eso es lo mismo que coincidir con la mezcla usual, y la sección 5 usa
+  distintos eso es lo mismo que coincidir con el merge usual, y la sección 5 usa
   valores distintos; las pruebas cubren también los repetidos.
 
 ## 2. Un ejemplo chico antes de la cuenta
@@ -67,8 +67,8 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 Dos entradas hechas a mano:
 
 ```
-I = [1, 4, 6, 9], D = [2, 3, 7, 8]: optimizada [1, 2, 3, 4, 6, 7, 8, 9] con 5 comparaciones; correcta
-I = [2, 4, 6, 8], D = [1, 3, 5, 7]: optimizada [1, 2, 3, 4, 5, 6, 7, 8] con 6 comparaciones; correcta
+I = [1, 4, 6, 9], D = [2, 3, 7, 8]: optimizado [1, 2, 3, 4, 6, 7, 8, 9] con 5 comparaciones; correcta
+I = [2, 4, 6, 8], D = [1, 3, 5, 7]: optimizado [1, 2, 3, 4, 5, 6, 7, 8] con 6 comparaciones; correcta
 ```
 
 Las dos salen bien, y la segunda es de peor caso para la variante: 6 comparaciones con
@@ -77,7 +77,7 @@ cota inferior de la sección 4 muestra que estos dos éxitos no prueban nada.
 
 ## 3. Cuántas comparaciones hace
 
-**Lema.** La mezcla optimizada hace a lo sumo $2n - 2$ comparaciones, y la cota se
+**Lema.** El merge optimizado hace a lo sumo $2n - 2$ comparaciones, y la cota se
 alcanza.
 
 *Demostración.* Cada comparación saca exactamente un elemento a la salida, y el ciclo
@@ -95,7 +95,7 @@ donde las comparaciones sacan un elemento de cada lista alternadamente. $\square
 El script recorre todas las entradas sin repetidos para $n \le 10$:
 
 ```
-  n  entradas  optimizada  2n - 2  mezcla  2n - 1  optimizada bien
+  n  entradas  optimizado  2n - 2   merge  2n - 1  optimizado bien
   1         2           0       0       1       1            50.0%
   2         6           2       2       3       3            50.0%
   3        20           4       4       5       5            50.0%
@@ -108,7 +108,7 @@ El script recorre todas las entradas sin repetidos para $n \le 10$:
  10   184 756          18      18      19      19            50.0%
 ```
 
-El peor caso de la variante es $2n - 2$ y el de la mezcla usual $2n - 1$, para todo
+El peor caso de la variante es $2n - 2$ y el del merge usual $2n - 1$, para todo
 $n$. La última columna ya delata el problema, pero el objetivo es llegar a esa
 conclusión sin probar nada.
 
@@ -120,7 +120,7 @@ pueda deducir de ninguna otra comparación. Si los dos vecinos son de la misma l
 orden ya se sabe; si son de listas distintas y nadie los comparó, podrían estar al
 revés. La entrada intercalada hace que **todos** los vecinos sean de listas distintas.
 
-**Teorema.** Todo algoritmo correcto de mezcla por comparaciones hace al menos $2n - 1$
+**Teorema.** Todo algoritmo correcto de merge por comparaciones hace al menos $2n - 1$
 comparaciones en el peor caso.
 
 *Demostración.* El adversario contesta como si la entrada fuera la intercalada
@@ -144,7 +144,7 @@ equivoca en una. Así que todo algoritmo correcto compara los $2n - 1$ pares. $\
 deja las listas ordenadas y todas las respuestas iguales, pero cambia la salida
 correcta. En mejor calidad: [MP4](animaciones/ejercicio-09-intercambio.mp4).*
 
-**Corolario.** La mezcla optimizada no es correcta.
+**Corolario.** El merge optimizado no es correcto.
 
 *Demostración.* Por el lema de la sección 3 nunca hace más de $2n - 2$ comparaciones, y
 por el teorema todo algoritmo correcto hace al menos $2n - 1$ sobre la entrada
@@ -158,21 +158,21 @@ La demostración del teorema indica dónde buscar: en la intercalada, la variant
 algún par de vecinos sin comparar. Corrámosla ahí con $n = 5$:
 
 ```
-salida de la optimizada: a1 b1 a2 b2 a3 b3 a4 b4 b5 a5
-salida correcta:         a1 b1 a2 b2 a3 b3 a4 b4 a5 b5
+salida del optimizado: a1 b1 a2 b2 a3 b3 a4 b4 b5 a5
+salida correcta:       a1 b1 a2 b2 a3 b3 a4 b4 a5 b5
 comparaciones: 7; pares de vecinos: 9; sin comparar: (b4, a5), (a5, b5)
-con a5 y b5 intercambiados: mismas respuestas a las comparaciones: True; la optimizada acierta: True
+con a5 y b5 intercambiados: mismas respuestas a las comparaciones: True; el optimizado acierta: True
 ```
 
-![La entrada del adversario y los pares que la optimizada no compara](ejercicio-09-adversario.svg)
+![La entrada del adversario y los pares que el optimizado no compara](ejercicio-09-adversario.svg)
 
 *Figura 1. La entrada intercalada con $n = 5$. Las líneas grises son los pares de
-vecinos que la optimizada compara al correr sobre ella. Los dos pares rojos nunca se
-comparan, y uno de ellos, $(a_5, b_5)$, queda en el orden equivocado.*
+vecinos que el merge optimizado compara al correr sobre ella. Los dos pares rojos nunca
+se comparan, y uno de ellos, $(a_5, b_5)$, queda en el orden equivocado.*
 
-![La mezcla optimizada](animaciones/ejercicio-09-optimizada.gif)
+![El merge optimizado](animaciones/ejercicio-09-optimizada.gif)
 
-*Animación 2. La mezcla optimizada sobre la entrada intercalada: 7 comparaciones, dos
+*Animación 2. El merge optimizado sobre la entrada intercalada: 7 comparaciones, dos
 pares de vecinos sin comparar, y $b_5$ antes que $a_5$. En mejor calidad:
 [MP4](animaciones/ejercicio-09-optimizada.mp4).*
 
@@ -182,11 +182,11 @@ $a_5$ y $b_5$ intercambiados, las respuestas a todas las comparaciones son las m
 y ahí la variante sí acierta. No puede distinguir las dos entradas, así que falla en
 una. ¿En cuáles exactamente?
 
-**Lema.** Con valores distintos, la mezcla optimizada devuelve la mezcla correcta si y
+**Lema.** Con valores distintos, el merge optimizado devuelve el merge correcto si y
 solo si el máximo de los $2n$ elementos está en $I$.
 
-*Demostración.* Mientras el ciclo corre, la variante hace lo mismo que la mezcla usual,
-así que $R$ es la mezcla correcta de lo consumido, y todo lo consumido es menor que lo
+*Demostración.* Mientras el ciclo corre, la variante hace lo mismo que el merge usual,
+así que $R$ es el merge correcto de lo consumido, y todo lo consumido es menor que lo
 que queda. Si sale porque $D$ se acabó, devuelve $R$ seguido del resto de $I$, que es
 correcto, y en ese caso el máximo está en $I$. Si sale con un solo elemento $a_n$ en
 $I$, devuelve $R$, el resto de $D$ y $a_n$. Como el resto de $D$ está ordenado, la
@@ -194,7 +194,7 @@ salida es correcta si y solo si $a_n$ es mayor que el último de $D$, es decir, 
 solo si el máximo está en $I$. $\square$
 
 ```
-en las 250 952 entradas con n de 1 a 10, la optimizada acierta si y solo si el máximo está en I: se cumple en 250 952
+en las 250 952 entradas con n de 1 a 10, el optimizado acierta si y solo si el máximo está en I: se cumple en 250 952
 ```
 
 Con datos al azar el máximo está en cualquiera de las dos listas con la misma
@@ -202,17 +202,23 @@ probabilidad, y por eso la tabla de la sección 3 da exactamente 50 %.
 
 ## 6. Qué baterías de pruebas ven el error
 
+Cuatro maneras de fabricar las dos listas ordenadas: **al azar**; **repartir
+alternando**, que toma una lista ordenada y reparte sus elementos uno a uno entre $D$ e
+$I$, empezando por $D$; **$I$ con los grandes**, donde todo $I$ está por encima de todo
+$D$; e **$I$ con los chicos**, al revés. Cada columna es el porcentaje de merges mal
+hechos:
+
 ```
-             batería  casos  mezcla  optimizada
+             batería  casos   merge  optimizado
              al azar   4000    0.0%       49.5%
  repartir alternando   4000    0.0%        0.0%
    I con los grandes   4000    0.0%        0.0%
     I con los chicos   4000    0.0%      100.0%
 ```
 
-![Fallos de cada mezcla según la batería de pruebas](ejercicio-09-baterias.svg)
+![Fallos de cada merge según la batería de pruebas](ejercicio-09-baterias.svg)
 
-*Figura 2. Porcentaje de mezclas mal hechas, según cómo se generaron las listas.
+*Figura 2. Porcentaje de merges mal hechos, según cómo se generaron las listas.
 Repartir una lista ordenada alternando, empezando por $D$, deja siempre el máximo en
 $I$.*
 
@@ -225,11 +231,11 @@ nada, y el adversario dijo qué probar: una entrada en la que el último de $I$ 
 máximo.
 
 Antes de dibujar, el script se comprueba a sí mismo: 20 000 pares de listas con
-repetidos y largos distintos, donde la mezcla da lo mismo que ordenar y nunca usa más
-de $|I| + |D| - 1$ comparaciones; todas las entradas con $n \le 10$, donde la variante
-nunca pasa de $2n - 2$ y la mezcla compara exactamente los $2n - 1$ pares de vecinos de
-la intercalada; y 20 000 pares con repetidos, donde la variante acierta si y solo si el
-último de $I$ es al menos el último de $D$:
+repetidos y largos distintos, donde el merge da lo mismo que ordenar y nunca usa más de
+$|I| + |D| - 1$ comparaciones; todas las entradas con $n \le 10$, donde la variante
+nunca pasa de $2n - 2$ y el merge usual compara exactamente los $2n - 1$ pares de
+vecinos de la intercalada; y 20 000 pares con repetidos, donde la variante acierta si y
+solo si el último de $I$ es al menos el último de $D$:
 
 ```
 290 962 comprobaciones, 0 fallos
@@ -241,11 +247,11 @@ demostración de la cota, que construye la entrada difícil, dice dónde.
 
 ## 7. Resumen
 
-- La mezcla optimizada hace a lo sumo $2n - 2$ comparaciones, y ese peor caso se
+- El merge optimizado hace a lo sumo $2n - 2$ comparaciones, y ese peor caso se
   alcanza.
-- Mezclar exige $2n - 1$: el adversario de la intercalada obliga a comparar cada par de
-  vecinos, porque intercambiar un par no comparado cambia la respuesta sin cambiar
-  ninguna comparación.
+- Hacer el merge exige $2n - 1$: el adversario de la intercalada obliga a comparar cada
+  par de vecinos, porque intercambiar un par no comparado cambia la respuesta sin
+  cambiar ninguna comparación.
 - Como $2n - 2 < 2n - 1$, la variante es incorrecta, y eso se decide sin probarla.
 - En la intercalada deja sin comparar $(a_n, b_n)$ y los coloca al revés. En general
   acierta si y solo si el máximo está en la primera lista: la mitad de las entradas.
@@ -258,12 +264,12 @@ demostración de la cota, que construye la entrada difícil, dice dónde.
 ```
 §2. Ejemplo chico: n = 4
 ------------------------
-I = [1, 4, 6, 9], D = [2, 3, 7, 8]: optimizada [1, 2, 3, 4, 6, 7, 8, 9] con 5 comparaciones; correcta
-I = [2, 4, 6, 8], D = [1, 3, 5, 7]: optimizada [1, 2, 3, 4, 5, 6, 7, 8] con 6 comparaciones; correcta
+I = [1, 4, 6, 9], D = [2, 3, 7, 8]: optimizado [1, 2, 3, 4, 6, 7, 8, 9] con 5 comparaciones; correcta
+I = [2, 4, 6, 8], D = [1, 3, 5, 7]: optimizado [1, 2, 3, 4, 5, 6, 7, 8] con 6 comparaciones; correcta
 
 §3. Comparaciones en el peor caso, sobre todas las entradas
 -----------------------------------------------------------
-  n  entradas  optimizada  2n - 2  mezcla  2n - 1  optimizada bien
+  n  entradas  optimizado  2n - 2   merge  2n - 1  optimizado bien
   1         2           0       0       1       1            50.0%
   2         6           2       2       3       3            50.0%
   3        20           4       4       5       5            50.0%
@@ -277,18 +283,18 @@ I = [2, 4, 6, 8], D = [1, 3, 5, 7]: optimizada [1, 2, 3, 4, 5, 6, 7, 8] con 6 co
 
 §5. La entrada del adversario: a1 < b1 < a2 < b2 < ... < an < bn
 ----------------------------------------------------------------
-salida de la optimizada: a1 b1 a2 b2 a3 b3 a4 b4 b5 a5
-salida correcta:         a1 b1 a2 b2 a3 b3 a4 b4 a5 b5
+salida del optimizado: a1 b1 a2 b2 a3 b3 a4 b4 b5 a5
+salida correcta:       a1 b1 a2 b2 a3 b3 a4 b4 a5 b5
 comparaciones: 7; pares de vecinos: 9; sin comparar: (b4, a5), (a5, b5)
-con a5 y b5 intercambiados: mismas respuestas a las comparaciones: True; la optimizada acierta: True
+con a5 y b5 intercambiados: mismas respuestas a las comparaciones: True; el optimizado acierta: True
 
 §5. Cuándo falla exactamente
 ----------------------------
-en las 250 952 entradas con n de 1 a 10, la optimizada acierta si y solo si el máximo está en I: se cumple en 250 952
+en las 250 952 entradas con n de 1 a 10, el optimizado acierta si y solo si el máximo está en I: se cumple en 250 952
 
 §6. Qué baterías de pruebas ven el error
 ----------------------------------------
-             batería  casos  mezcla  optimizada
+             batería  casos   merge  optimizado
              al azar   4000    0.0%       49.5%
  repartir alternando   4000    0.0%        0.0%
    I con los grandes   4000    0.0%        0.0%

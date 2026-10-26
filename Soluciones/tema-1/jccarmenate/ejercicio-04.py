@@ -28,33 +28,33 @@ BLANCO = "□"
 
 # delta[(estado, símbolo leído)] = (símbolo que escribe, movimiento, estado nuevo)
 INCREMENTAR = {
-    ("acarreo", "1"): ("0", -1, "acarreo"),      # 1 + acarreo = 0, el acarreo sigue
-    ("acarreo", "0"): ("1", +1, "volver"),       # 0 + acarreo = 1, se acabó
-    ("acarreo", BLANCO): ("1", +1, "volver"),    # el número crece un bit
-    ("volver", "0"): ("0", +1, "volver"),        # la vuelta solo pisa los ceros que
-    ("volver", BLANCO): (BLANCO, -1, "fin"),     # dejó el acarreo; el blanco de la
+    ("carry", "1"): ("0", -1, "carry"),      # 1 + acarreo = 0, el acarreo sigue
+    ("carry", "0"): ("1", +1, "back"),       # 0 + acarreo = 1, se acabó
+    ("carry", BLANCO): ("1", +1, "back"),    # el número crece un bit
+    ("back", "0"): ("0", +1, "back"),        # la vuelta solo pisa los ceros que
+    ("back", BLANCO): (BLANCO, -1, "halt"),     # dejó el acarreo; el blanco de la
 }                                                # derecha marca el final
 
 # La variante con el cabezal en el bit MÁS significativo: tiene que ir hasta el final
 # del número, sumar, y volver al principio.
 INCREMENTAR_DESDE_MSB = {
-    ("ir", "0"): ("0", +1, "ir"),
-    ("ir", "1"): ("1", +1, "ir"),
-    ("ir", BLANCO): (BLANCO, -1, "acarreo"),
-    ("acarreo", "1"): ("0", -1, "acarreo"),
-    ("acarreo", "0"): ("1", -1, "volver"),
-    ("acarreo", BLANCO): ("1", -1, "volver"),
-    ("volver", "0"): ("0", -1, "volver"),
-    ("volver", "1"): ("1", -1, "volver"),
-    ("volver", BLANCO): (BLANCO, +1, "fin"),
+    ("go", "0"): ("0", +1, "go"),
+    ("go", "1"): ("1", +1, "go"),
+    ("go", BLANCO): (BLANCO, -1, "carry"),
+    ("carry", "1"): ("0", -1, "carry"),
+    ("carry", "0"): ("1", -1, "back"),
+    ("carry", BLANCO): ("1", -1, "back"),
+    ("back", "0"): ("0", -1, "back"),
+    ("back", "1"): ("1", -1, "back"),
+    ("back", BLANCO): (BLANCO, +1, "halt"),
 }
 
 
 def correr(delta, cinta, cabezal, estado, traza=None):
-    """Aplica la función de transición hasta llegar al estado 'fin'. Modifica la cinta
+    """Aplica la función de transición hasta llegar al estado 'halt'. Modifica la cinta
     y devuelve (posición final del cabezal, cantidad de pasos)."""
     pasos = 0
-    while estado != "fin":
+    while estado != "halt":
         leido = cinta.get(cabezal, BLANCO)
         if traza is not None:
             traza.append((estado, cabezal, dict(cinta)))
@@ -93,7 +93,7 @@ class Contador:
         self.cinta, self.cabezal, self.valor = {0: "0"}, 0, 0
 
     def incrementar(self, traza=None):
-        self.cabezal, pasos = correr(INCREMENTAR, self.cinta, self.cabezal, "acarreo",
+        self.cabezal, pasos = correr(INCREMENTAR, self.cinta, self.cabezal, "carry",
                                      traza)
         self.valor += 1
         return pasos
@@ -109,7 +109,7 @@ class ContadorDesdeMSB:
         self.cinta, self.cabezal, self.valor = {0: "0"}, 0, 0
 
     def incrementar(self):
-        self.cabezal, pasos = correr(INCREMENTAR_DESDE_MSB, self.cinta, self.cabezal, "ir")
+        self.cabezal, pasos = correr(INCREMENTAR_DESDE_MSB, self.cinta, self.cabezal, "go")
         self.valor += 1
         return pasos
 
@@ -297,7 +297,7 @@ def _guardar(fig, nombre):
 def figura_espacio_tiempo(traza):
     celdas = list(range(-5, 2))
     fig, ax = plt.subplots(figsize=(5.6, 4.0))
-    colores = {"acarreo": CALIDO, "volver": OSCURO, "fin": APAGADO}
+    colores = {"carry": CALIDO, "back": OSCURO, "halt": APAGADO}
     for k, (estado, cabezal, cinta) in enumerate(traza):
         y = -k
         for p in celdas:

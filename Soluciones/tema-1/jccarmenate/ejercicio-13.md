@@ -23,9 +23,12 @@ python ejercicio-13.py
 
 ## 1. El problema
 
-Acceder a una clave es buscarla y hacerle **splay**, que la sube a la raíz con pasos
-zig, zig-zig y zig-zag. Para cada nodo $x$, $s(x)$ es el número de nodos de su subárbol
-y $r(x) = \log_2 s(x)$ su **rango**. El **potencial** del árbol es
+Acceder a una clave es buscarla y hacerle **splay**, que la sube a la raíz con pasos de
+tres tipos. Sea $x$ el nodo que sube, $p$ su padre y $g$ su abuelo. Un **zig** es una
+rotación de $x$, y se hace solo cuando $p$ es la raíz. Un **zig-zig**, cuando $x$ y $p$
+son hijos del mismo lado, rota primero $p$ y después $x$. Un **zig-zag**, cuando son
+hijos de lados distintos, rota $x$ dos veces. Para cada nodo $x$, $s(x)$ es el número de
+nodos de su subárbol y $r(x) = \log_2 s(x)$ su **rango**. El **potencial** del árbol es
 $\Phi = \sum_x r(x)$, y el costo amortizado de una operación es su costo real más la
 variación de $\Phi$.
 

@@ -22,10 +22,10 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------------------------------
 
 class Nodo:
-    __slots__ = ("sig", "indice", "valor")
+    __slots__ = ("next", "indice", "value")
 
-    def __init__(self, indice, valor=None):
-        self.sig, self.indice, self.valor = None, indice, valor
+    def __init__(self, indice, value=None):
+        self.next, self.indice, self.value = None, indice, value
 
 
 def lista(mu, lam, valores=None):
@@ -35,9 +35,9 @@ def lista(mu, lam, valores=None):
     n = mu + lam
     nodos = [Nodo(i, None if valores is None else valores[i]) for i in range(n)]
     for i in range(n - 1):
-        nodos[i].sig = nodos[i + 1]
+        nodos[i].next = nodos[i + 1]
     if lam > 0:
-        nodos[-1].sig = nodos[mu]
+        nodos[-1].next = nodos[mu]
     return nodos[0] if nodos else None
 
 
@@ -49,19 +49,19 @@ class Lector:
 
     def __call__(self, nodo):
         self.lecturas += 1
-        return nodo.sig
+        return nodo.next
 
 
-def floyd(cabeza, sig):
+def floyd(head, next_of):
     """Tortuga a velocidad 1, liebre a velocidad 2. Devuelve (respuesta, vueltas)."""
-    t = h = cabeza
+    t = h = head
     vueltas = 0
     while h is not None:
-        h1 = sig(h)
+        h1 = next_of(h)
         if h1 is None:
             break
-        h = sig(h1)
-        t = sig(t)
+        h = next_of(h1)
+        t = next_of(t)
         vueltas += 1
         if t is h:
             return "hay ciclo", vueltas
@@ -116,9 +116,9 @@ def ejemplo_chico():
 def sin_ciclo():
     seccion("§2. Sin ciclo: n = 7 y n = 8")
     for n in [7, 8]:
-        sig = Lector()
-        resultado, vueltas = floyd(lista(n, 0), sig)
-        print(f"n = {n}: {resultado} en {vueltas} vueltas y {sig.lecturas} lecturas; "
+        next_of = Lector()
+        resultado, vueltas = floyd(lista(n, 0), next_of)
+        print(f"n = {n}: {resultado} en {vueltas} vueltas y {next_of.lecturas} lecturas; "
               f"3·floor(n/2) + (n mod 2) = {3 * (n // 2) + n % 2}")
 
 
@@ -144,10 +144,10 @@ def posiciones_vigiladas(mu, lam):
         pot = potencial(k, mu, lam)
         assert pot >= 0 and (previo is None or pot < previo)
         previo = pot
-        h1 = h.sig
+        h1 = h.next
         if h1 is None:
             break
-        h, t = h1.sig, t.sig
+        h, t = h1.next, t.next
         k += 1
         if t is h:
             return k
@@ -159,17 +159,17 @@ def exhaustivo():
     con, sin = 0, 0
     for mu in range(61):
         for lam in range(1, 61):
-            sig = Lector()
-            resultado, vueltas = floyd(lista(mu, lam), sig)
+            next_of = Lector()
+            resultado, vueltas = floyd(lista(mu, lam), next_of)
             assert resultado == "hay ciclo"
             assert vueltas == k_estrella(mu, lam) == posiciones_vigiladas(mu, lam)
-            assert sig.lecturas == 3 * vueltas and vueltas <= mu + lam
+            assert next_of.lecturas == 3 * vueltas and vueltas <= mu + lam
             con += 1
     for n in range(121):
-        sig = Lector()
-        resultado, vueltas = floyd(lista(n, 0), sig)
+        next_of = Lector()
+        resultado, vueltas = floyd(lista(n, 0), next_of)
         assert resultado == "no hay ciclo" and vueltas == n // 2
-        assert sig.lecturas == 3 * (n // 2) + n % 2
+        assert next_of.lecturas == 3 * (n // 2) + n % 2
         posiciones_vigiladas(n, 0)
         sin += 1
     print(f"{miles(con)} listas con ciclo (mu de 0 a 60, lambda de 1 a 60): todas "
@@ -187,26 +187,26 @@ def peor_caso():
         peor, donde = 0, None
         for mu in range(n):
             lam = n - mu
-            sig = Lector()
-            floyd(lista(mu, lam), sig)
-            if sig.lecturas > peor:
-                peor, donde = sig.lecturas, (mu, lam)
-        sig = Lector()
-        floyd(lista(n, 0), sig)
-        print(f"{n:>6} {peor:>15} {str(donde):>19} {sig.lecturas:>10} {peor / n:>9.2f}")
+            next_of = Lector()
+            floyd(lista(mu, lam), next_of)
+            if next_of.lecturas > peor:
+                peor, donde = next_of.lecturas, (mu, lam)
+        next_of = Lector()
+        floyd(lista(n, 0), next_of)
+        print(f"{n:>6} {peor:>15} {str(donde):>19} {next_of.lecturas:>10} {peor / n:>9.2f}")
 
 
-def busqueda_con_conjunto(cabeza, sig, guardados=None):
+def busqueda_con_conjunto(head, next_of, guardados=None):
     """La alternativa obvia: recordar todos los nodos vistos. Memoria Θ(n)."""
     vistos = set()
-    x = cabeza
+    x = head
     respuesta_ = "no hay ciclo"
     while x is not None:
         if id(x) in vistos:
             respuesta_ = "hay ciclo"
             break
         vistos.add(id(x))
-        x = sig(x)
+        x = next_of(x)
     if guardados is not None:
         guardados.append(len(vistos))
     return respuesta_
@@ -224,22 +224,22 @@ def comparar_con_conjunto():
         print(f"{nombre:>20} {s1.lecturas:>16} {s2.lecturas:>19} {guardados[0]:>26}")
 
 
-def inicio_del_ciclo(cabeza, sig):
+def inicio_del_ciclo(head, next_of):
     """Floyd completo: si hay ciclo, devuelve (mu, lambda)."""
-    t = h = cabeza
+    t = h = head
     while True:                              # primera fase: hasta encontrarse en x_k*
-        if h is None or sig(h) is None:
+        if h is None or next_of(h) is None:
             return None
-        h = sig(sig(h))
-        t = sig(t)
+        h = next_of(next_of(h))
+        t = next_of(t)
         if t is h:
             break
-    t, mu = cabeza, 0
+    t, mu = head, 0
     while t is not h:                        # segunda fase: los dos a velocidad 1
-        t, h, mu = sig(t), sig(h), mu + 1
-    lam, x = 1, sig(t)
+        t, h, mu = next_of(t), next_of(h), mu + 1
+    lam, x = 1, next_of(t)
     while x is not t:                        # tercera fase: una vuelta al ciclo
-        x, lam = sig(x), lam + 1
+        x, lam = next_of(x), lam + 1
     return mu, lam
 
 
@@ -258,31 +258,31 @@ def de_regalo():
 # 3. Los errores plantados
 # --------------------------------------------------------------------------
 
-def floyd_un_paso(cabeza):
+def floyd_un_paso(head):
     """La liebre solo mira que ella misma exista antes de dar dos pasos."""
-    t = h = cabeza
+    t = h = head
     while h is not None:
-        h = h.sig.sig                        # revienta si h.sig es None
-        t = t.sig
+        h = h.next.next                        # revienta si h.next es None
+        t = t.next
         if t is h:
             return "hay ciclo"
     return "no hay ciclo"
 
 
-def floyd_por_valor(cabeza):
+def floyd_por_valor(head):
     """Compara lo que guardan los nodos en vez de compararlos a ellos."""
-    t = h = cabeza
-    while h is not None and h.sig is not None:
-        h = h.sig.sig
-        t = t.sig
-        if h is not None and t.valor == h.valor:
+    t = h = head
+    while h is not None and h.next is not None:
+        h = h.next.next
+        t = t.next
+        if h is not None and t.value == h.value:
             return "hay ciclo"
     return "no hay ciclo"
 
 
-def respuesta(funcion, cabeza):
+def respuesta(funcion, head):
     try:
-        return funcion(cabeza)
+        return funcion(head)
     except AttributeError:
         return "revienta"
 
@@ -302,7 +302,7 @@ def errores_plantados():
                                  for lam in range(1, 13 - mu + 1)]
                                 + [caso(n, 0) for n in range(13)]),
     }
-    variantes = [("correcta", lambda c: floyd(c, lambda x: x.sig)[0]),
+    variantes = [("correcta", lambda c: floyd(c, lambda x: x.next)[0]),
                  ("liebre de un paso", floyd_un_paso),
                  ("compara valores", floyd_por_valor)]
     fallos = {}
@@ -343,14 +343,14 @@ def pruebas():
     # (a) listas con ciclo y sin ciclo: respuesta, vueltas y lecturas exactas
     for mu in range(81):
         for lam in range(0, 81):
-            sig = Lector()
-            resultado, vueltas = floyd(lista(mu, lam), sig)
+            next_of = Lector()
+            resultado, vueltas = floyd(lista(mu, lam), next_of)
             if lam == 0:
                 assert resultado == "no hay ciclo" and vueltas == mu // 2
-                assert sig.lecturas == 3 * (mu // 2) + mu % 2
+                assert next_of.lecturas == 3 * (mu // 2) + mu % 2
             else:
                 assert resultado == "hay ciclo" and vueltas == k_estrella(mu, lam)
-                assert sig.lecturas == 3 * vueltas <= 3 * (mu + lam)
+                assert next_of.lecturas == 3 * vueltas <= 3 * (mu + lam)
             comprobaciones += 1
 
     # (b) invariante de posiciones y potencial vigilados

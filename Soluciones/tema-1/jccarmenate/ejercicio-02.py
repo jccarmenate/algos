@@ -34,13 +34,13 @@ class Comparador:
         return (x > y) - (x < y)
 
 
-def busqueda_binaria(A, x, comparar):
+def binary_search(A, x, compare):
     """A ordenado de forma no decreciente. Devuelve ("está", i) con A[i] == x, o
     ("hueco", g) si x no está, donde g es la cantidad de elementos menores que x."""
     lo, hi = 0, len(A)
     while lo < hi:
         m = (lo + hi) // 2
-        r = comparar(x, A[m])
+        r = compare(x, A[m])
         if r == 0:
             return ("está", m)
         if r < 0:
@@ -172,7 +172,7 @@ def invariante_vigilado():
             busqueda_vigilada(A, x)
         except AssertionError:
             rotos += 1
-        mal += not correcta(A, x, busqueda_binaria(A, x, Comparador()))
+        mal += not correcta(A, x, binary_search(A, x, Comparador()))
     print(f"sobre {miles(pruebas)} arreglos desordenados: el invariante se rompe en "
           f"{100 * rotos / pruebas:.1f}% de las búsquedas y la respuesta está mal en "
           f"{100 * mal / pruebas:.1f}%")
@@ -185,7 +185,7 @@ def peor_caso_exhaustivo(n):
     peor = 0
     for x in range(1, 2 * n + 2):
         c = Comparador()
-        assert correcta(A, x, busqueda_binaria(A, x, c))
+        assert correcta(A, x, binary_search(A, x, c))
         peor = max(peor, c.veces)
     return peor
 
@@ -211,7 +211,7 @@ def peor_caso():
     for n in [10**4, 10**6]:
         A = list(range(2, 2 * n + 1, 2))
         c = Comparador()
-        busqueda_binaria(A, 0, c)                  # x menor que todos
+        binary_search(A, 0, c)                  # x menor que todos
         print(f"{n:>8} {c.veces:>17} {techo_log2(n + 1):>16} {'—':>14}")
     total = sum(2 * n + 1 for n in range(301))
     assert all(peor_caso_exhaustivo(n) == techo_log2(n + 1) for n in range(301))
@@ -222,7 +222,7 @@ def peor_caso():
     n = 10**6
     A = list(range(2, 2 * n + 1, 2))
     c = Comparador()
-    busqueda_binaria(A, 0, c)
+    binary_search(A, 0, c)
     print(f"con n = {miles(n)}: x menor que todos usa {c.veces} comparaciones = "
           f"bits de n; una búsqueda lineal usaría hasta {miles(n)}")
 
@@ -242,12 +242,12 @@ def arbol_de_decision(n):
     for x in range(1, 2 * n + 2):
         camino = []
 
-        def comparar(x, y):
+        def compare(x, y):
             r = (x > y) - (x < y)
             camino.append((A.index(y), r))
             return r
 
-        resultado = busqueda_binaria(A, x, comparar)
+        resultado = binary_search(A, x, compare)
         nodo = raiz
         for j, r in camino:
             assert nodo.setdefault("pos", j) == j   # dos caminos coinciden donde se cruzan
@@ -361,17 +361,17 @@ def errores_plantados():
 # 4. Comparaciones de dos vías
 # --------------------------------------------------------------------------
 
-def busqueda_dos_vias(A, x, menor):
+def two_way_binary_search(A, x, less):
     """Solo pregunta 'a < b?'. El ciclo busca la cantidad de elementos menores que x,
     y una última pregunta decide si x está."""
     lo, hi = 0, len(A)
     while lo < hi:                       # invariante: A[:lo] < x <= A[hi:]
         m = (lo + hi) // 2
-        if menor(A[m], x):
+        if less(A[m], x):
             lo = m + 1
         else:
             hi = m
-    if lo < len(A) and not menor(x, A[lo]):
+    if lo < len(A) and not less(x, A[lo]):
         return ("está", lo)
     return ("hueco", lo)
 
@@ -394,7 +394,7 @@ def dos_vias():
         peor = 0
         for x in range(1, 2 * n + 2):
             c = Menor()
-            assert correcta(A, x, busqueda_dos_vias(A, x, c))
+            assert correcta(A, x, two_way_binary_search(A, x, c))
             peor = max(peor, c.veces)
         print(f"{n:>6} {peor:>17} {techo_log2(2 * n + 1):>17} "
               f"{techo_log2(n + 1) + 1:>20}")
@@ -413,7 +413,7 @@ def pruebas():
     for _ in range(30_000):
         A = sorted(rng.randrange(30) for _ in range(rng.randint(0, 40)))
         x = rng.randint(-2, 32)
-        assert correcta(A, x, busqueda_binaria(A, x, Comparador()))
+        assert correcta(A, x, binary_search(A, x, Comparador()))
         comprobaciones += 1
 
     # (b) todos los resultados posibles para n <= 300, y su peor caso exacto
@@ -445,7 +445,7 @@ def pruebas():
         A = sorted(rng.randrange(30) for _ in range(rng.randint(0, 40)))
         x = rng.randint(-2, 32)
         c = Menor()
-        assert correcta(A, x, busqueda_dos_vias(A, x, c))
+        assert correcta(A, x, two_way_binary_search(A, x, c))
         assert c.veces <= techo_log2(2 * len(A) + 1)
         comprobaciones += 1
 

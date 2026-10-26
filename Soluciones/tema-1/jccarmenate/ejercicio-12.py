@@ -34,41 +34,41 @@ def gale_shapley(pref_a, pref_b, orden="cola", semilla=0, traza=None, uno_antes=
     sección 7: el proponente se rinde una propuesta antes de agotar la lista.
     """
     n_a, n_b = len(pref_a), len(pref_b)
-    rango = [{a: lugar for lugar, a in enumerate(pref_b[b])} for b in range(n_b)]
-    siguiente = [0] * n_a
-    pareja_de_b = [None] * n_b
+    rank = [{a: pos for pos, a in enumerate(pref_b[b])} for b in range(n_b)]
+    next_choice = [0] * n_a
+    match_of_b = [None] * n_b
     corte = 1 if uno_antes else 0
 
-    def le_queda(a):
-        return siguiente[a] < len(pref_a[a]) - corte
+    def has_more(a):
+        return next_choice[a] < len(pref_a[a]) - corte
 
-    libres = deque(a for a in range(n_a) if le_queda(a))
+    free = deque(a for a in range(n_a) if has_more(a))
     azar = random.Random(semilla)
     propuestas = 0
 
-    while libres:
+    while free:
         if orden == "azar":
-            libres.rotate(azar.randrange(len(libres)))
-        a = libres.popleft() if orden == "cola" else libres.pop()
-        b = pref_a[a][siguiente[a]]
-        siguiente[a] += 1
+            free.rotate(azar.randrange(len(free)))
+        a = free.popleft() if orden == "cola" else free.pop()
+        b = pref_a[a][next_choice[a]]
+        next_choice[a] += 1
         propuestas += 1
-        actual = pareja_de_b[b]
-        if a not in rango[b]:                       # b no acepta a a
-            rechazado = a
-        elif actual is None:
-            pareja_de_b[b], rechazado = a, None
-        elif rango[b][a] < rango[b][actual]:
-            pareja_de_b[b], rechazado = a, actual
+        current = match_of_b[b]
+        if a not in rank[b]:                       # b no acepta a a
+            rejected = a
+        elif current is None:
+            match_of_b[b], rejected = a, None
+        elif rank[b][a] < rank[b][current]:
+            match_of_b[b], rejected = a, current
         else:
-            rechazado = a
+            rejected = a
         if traza is not None:
-            traza.append((a, b, actual, pareja_de_b[b]))
-        if rechazado is not None and le_queda(rechazado):
-            libres.append(rechazado)
+            traza.append((a, b, current, match_of_b[b]))
+        if rejected is not None and has_more(rejected):
+            free.append(rejected)
 
     M = [None] * n_a
-    for b, a in enumerate(pareja_de_b):
+    for b, a in enumerate(match_of_b):
         if a is not None:
             M[a] = b
     return M, propuestas
@@ -78,21 +78,21 @@ def gale_shapley_completo(pref_a, pref_b):
     """La versión para listas completas, sin cambios: todo proponente rechazado vuelve
     a la cola, porque ahí siempre le queda alguien."""
     n = len(pref_a)
-    rango = [{a: lugar for lugar, a in enumerate(pref_b[b])} for b in range(n)]
-    siguiente, pareja_de_b, libres = [0] * n, [None] * n, deque(range(n))
-    while libres:
-        a = libres.popleft()
-        b = pref_a[a][siguiente[a]]                 # IndexError si a agotó su lista
-        siguiente[a] += 1
-        actual = pareja_de_b[b]
-        if actual is None:
-            pareja_de_b[b] = a
-        elif rango[b][a] < rango[b][actual]:
-            pareja_de_b[b] = a
-            libres.append(actual)
+    rank = [{a: pos for pos, a in enumerate(pref_b[b])} for b in range(n)]
+    next_choice, match_of_b, free = [0] * n, [None] * n, deque(range(n))
+    while free:
+        a = free.popleft()
+        b = pref_a[a][next_choice[a]]                 # IndexError si a agotó su lista
+        next_choice[a] += 1
+        current = match_of_b[b]
+        if current is None:
+            match_of_b[b] = a
+        elif rank[b][a] < rank[b][current]:
+            match_of_b[b] = a
+            free.append(current)
         else:
-            libres.append(a)
-    return pareja_de_b
+            free.append(a)
+    return match_of_b
 
 
 def aceptable(pref_a, pref_b, a, b):
@@ -102,14 +102,14 @@ def aceptable(pref_a, pref_b, a, b):
 def bloqueantes(M, pref_a, pref_b):
     """La definición nueva. (a, b) bloquea si se aceptan mutuamente, no están juntos, a
     está solo o prefiere b a su pareja, y b está solo o prefiere a a su pareja."""
-    pareja_de_b = {b: a for a, b in enumerate(M) if b is not None}
+    match_of_b = {b: a for a, b in enumerate(M) if b is not None}
     res = []
     for a in range(len(pref_a)):
         for b in pref_a[a]:
             if M[a] == b or a not in pref_b[b]:
                 continue
             quiere_a = M[a] is None or pref_a[a].index(b) < pref_a[a].index(M[a])
-            otro = pareja_de_b.get(b)
+            otro = match_of_b.get(b)
             quiere_b = otro is None or pref_b[b].index(a) < pref_b[b].index(otro)
             if quiere_a and quiere_b:
                 res.append((a, b))
@@ -395,8 +395,8 @@ def pruebas():
         n = rng.randint(1, 12)
         pa, pb = instancia(n, n, rng)
         M, k = gale_shapley(pa, pb)
-        pareja_de_b = gale_shapley_completo(pa, pb)
-        assert all(M[a] == b for b, a in enumerate(pareja_de_b))
+        match_of_b = gale_shapley_completo(pa, pb)
+        assert all(M[a] == b for b, a in enumerate(match_of_b))
         assert None not in M and k <= n * n
         comprobaciones += 2
 

@@ -70,19 +70,20 @@ un eje.
 ## 3. Qué rompe la cota, y por qué no hay contradicción
 
 El algoritmo incremental aleatorio con rejilla, que viene de ideas de Rabin (1976) y que
-Kleinberg y Tardos (2006, §13.7) presentan en el plano con celdas cuadradas, resuelve
-el problema en tiempo esperado $O(n)$. No contradice el teorema de la sección 2, porque
-no es un árbol de decisión algebraico, y por dos razones. Calcula
-$\lfloor x / \delta \rfloor$, la celda de un punto, y la parte entera no es un
-polinomio. Y usa ese número como **dirección**, buscando en una tabla hash la celda
-cuyo índice acaba de calcular, y un árbol de decisión no tiene direccionamiento
+Kleinberg y Tardos (2006, §13.7) presentan en el plano con celdas cuadradas, resuelve el
+problema en tiempo esperado $O(n)$. No contradice el teorema de la sección 2, porque no
+es un árbol de decisión algebraico, y por dos razones. Mantiene $\delta$, la menor
+distancia entre los puntos vistos hasta el momento, y parte la recta en celdas de ancho
+$\delta$. Calcula $\lfloor x / \delta \rfloor$, la celda de un punto, y la parte entera
+no es un polinomio. Y usa ese número como **dirección**, buscando en una tabla hash la
+celda cuyo índice acaba de calcular, y un árbol de decisión no tiene direccionamiento
 indirecto. Vive en el modelo RAM, que tiene las dos cosas.
 
 El azar no está en esa lista: distinción de elementos sigue requiriendo
-$\Omega(n \log n)$ en árboles de decisión algebraicos aleatorizados (Grigoriev, Karpinski,
-Meyer auf der Heide y Smolensky, 1996). El azar le sirve al algoritmo para que se
-esperen pocas reconstrucciones. Lo que lo saca del modelo son la parte entera y la
-tabla.
+$\Omega(n \log n)$ en árboles de decisión algebraicos aleatorizados (Grigoriev,
+Karpinski, Meyer auf der Heide y Smolensky, 1996). El azar le sirve al algoritmo para
+que se esperen pocas reconstrucciones, que es rehacer las celdas cada vez que $\delta$
+baja. Lo que lo saca del modelo son la parte entera y la tabla.
 
 En una dimensión esto se ve todavía más claro: con una tabla hash, distinción de
 elementos se resuelve en tiempo esperado $O(n)$ sin ninguna rejilla, metiendo cada
@@ -103,23 +104,23 @@ $[k\delta, (k+1)\delta)$, guardadas en un diccionario, y la celda del punto $x$ 
 $\lfloor x / \delta \rfloor$.
 
 ```python
-def par_mas_cercano(xs, semilla=0):
+def closest_pair(xs, seed=0):
     pts = list(xs)
-    random.Random(semilla).shuffle(pts)
+    random.Random(seed).shuffle(pts)
     d = abs(pts[0] - pts[1])
     if d == 0:
         return 0
-    tabla = {pts[0] // d: pts[0], pts[1] // d: pts[1]}
+    grid = {pts[0] // d: pts[0], pts[1] // d: pts[1]}
     for i in range(2, len(pts)):
         p, c = pts[i], pts[i] // d
-        mejor = min([d] + [abs(p - tabla[k]) for k in (c - 1, c, c + 1) if k in tabla])
-        if mejor == 0:
+        best = min([d] + [abs(p - grid[k]) for k in (c - 1, c, c + 1) if k in grid])
+        if best == 0:
             return 0
-        if mejor < d:                          # delta bajó: reconstruir
-            d = mejor
-            tabla = {q // d: q for q in pts[:i + 1]}
+        if best < d:                           # delta bajó: reconstruir
+            d = best
+            grid = {q // d: q for q in pts[:i + 1]}
         else:
-            tabla[c] = p
+            grid[c] = p
     return d
 ```
 

@@ -39,7 +39,9 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 
 ## 2. Un ejemplo chico antes del algoritmo
 
-Un ejemplo con $n = 8$:
+Un ejemplo con $n = 8$. La tabla empareja cada $A[k]$ con $B[n-1-k]$ y pregunta si
+$A[k] \le B[n-1-k]$. En la penúltima línea, $i^*$ es la cantidad de respuestas sí, y la
+sección 3 muestra que es justo cuántos de los $n$ menores aporta $A$:
 
 ```
 A = 3 8 11 20 24 31 40 52
@@ -115,7 +117,7 @@ para $k < \mathit{lo}$ y no vale para $k \ge \mathit{hi}$" y potencial
 $\mathit{hi} - \mathit{lo}$:
 
 ```python
-def corte(A, B):
+def split_point(A, B):
     n = len(A)
     lo, hi = 0, n
     while lo < hi:
@@ -126,9 +128,9 @@ def corte(A, B):
             hi = m
     return lo
 
-def mediana(A, B):
+def median(A, B):
     n = len(A)
-    i = corte(A, B)
+    i = split_point(A, B)
     if i == 0:
         return B[n - 1]
     if i == n:
@@ -146,7 +148,7 @@ con la de ordenar todo:
 
 ## 4. El costo
 
-**Lema.** `mediana` hace a lo sumo $\lceil \log_2(n+1) \rceil + 1$ comparaciones y usa
+**Lema.** `median` hace a lo sumo $\lceil \log_2(n+1) \rceil + 1$ comparaciones y usa
 memoria $O(1)$.
 
 *Demostración.* La búsqueda binaria elige entre $n + 1$ valores posibles de $i^*$, y la

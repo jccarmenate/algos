@@ -16,7 +16,7 @@ ejercicio.
 | | `testigo` | dos huecos no comparten hoja, y once huecos piden altura 4 |
 | | `estancada` | con `lo = m`, un candidato menor que $x$ deja la ventana quieta |
 | [3](../ejercicio-03.md) | `paralela` | cada celda de $M$ es el mínimo del prefijo de $S$ |
-| | `repetidos` | con `<`, desapilar un mínimo repetido vacía $M$ |
+| | `repetidos` | con `<`, el `pop` de un mínimo repetido vacía $M$ |
 | [4](../ejercicio-04.md) | `monedas` | dos monedas por cada 1 pagan la ida y la vuelta: amortizado, 4 |
 | | `cabezal` | desde el bit más significativo hay que caminar todo el número |
 | [5](../ejercicio-05.md) | `invariante` | tortuga en $x_k$, liebre en $x_{2k}$; con y sin ciclo |
@@ -29,7 +29,7 @@ ejercicio.
 | [8](../ejercicio-08.md) | `trios` | copias vivas y tríos de distintos: el invariante (T) |
 | | `orden-malo` | dos copias de B en lugares distintos, canceladas juntas |
 | [9](../ejercicio-09.md) | `intercambio` | intercambiar dos vecinos no comparados cambia la salida y no las respuestas |
-| | `optimizada` | la mezcla optimizada deja dos pares sin comparar |
+| | `optimizada` | el merge optimizado deja dos pares sin comparar |
 | [10](../ejercicio-10.md) | `rejilla` | celdas de ancho $\delta$, tres consultas, reconstrucciones |
 | | `hacia-atras` | el último en llegar reconstruye con probabilidad $2/i$ |
 | | `orden-adversario` | sin azar, se reconstruye en cada paso |

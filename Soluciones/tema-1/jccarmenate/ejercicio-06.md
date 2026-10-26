@@ -73,7 +73,7 @@ revés. La superior derecha es a la vez la mayor de su fila y la menor de su col
 después de cada descarte lo que queda vuelve a ser una matriz con una esquina así.
 
 ```python
-def escalera(M, x):
+def saddleback_search(M, x):
     n = len(M)
     i, j = 0, n - 1
     while i < n and j >= 0:
@@ -88,8 +88,8 @@ def escalera(M, x):
 
 **Invariante (I).** $x$ no está en ninguna celda $(r, c)$ con $r < i$ o con $c > j$.
 
-**Teorema.** (I) se cumple al comienzo de cada vuelta, y `escalera` devuelve `True` si y
-solo si $x$ está en la matriz.
+**Teorema.** (I) se cumple al comienzo de cada vuelta, y `saddleback_search` devuelve
+`True` si y solo si $x$ está en la matriz.
 
 *Demostración.* *Inicialización.* Con $i = 0$ y $j = n - 1$ no hay celdas con $r < 0$
 ni con $c > n - 1$.
@@ -112,7 +112,8 @@ El paso delicado del mantenimiento es que cada comparación usa **solo uno** de 
 descartar hacia la izquierda. La parte de la fila o de la columna que queda "del otro
 lado" ya estaba descartada, y eso lo aporta (I).
 
-**Lema.** `escalera` hace a lo sumo $2n - 1$ comparaciones y usa memoria $O(1)$.
+**Lema.** `saddleback_search` hace a lo sumo $2n - 1$ comparaciones y usa memoria
+$O(1)$.
 
 *Demostración.* Sea $\Phi = (n - i) + (j + 1)$, las filas más las columnas que quedan.
 Empieza en $2n$, y cada comparación que no encuentra a $x$ lo baja en 1. Mientras el

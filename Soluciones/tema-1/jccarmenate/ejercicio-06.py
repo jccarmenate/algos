@@ -46,14 +46,14 @@ def matriz_al_azar(n, rng, paso=3):
     return M
 
 
-def escalera(M, x, comparar, columna_minima=0):
+def saddleback_search(M, x, compare, columna_minima=0):
     """Empieza en la esquina superior derecha. Si la celda es mayor que x, descarta su
     columna; si es menor, descarta su fila. `columna_minima = 1` es el error plantado
     de la sección 7: el ciclo nunca mira la columna 0."""
     n = len(M)
     i, j = 0, n - 1
     while i < n and j >= columna_minima:
-        r = comparar(x, i, j)
+        r = compare(x, i, j)
         if r == 0:
             return ("está", (i, j))
         if r < 0:
@@ -63,13 +63,13 @@ def escalera(M, x, comparar, columna_minima=0):
     return ("no está", None)
 
 
-def binaria_por_filas(M, x, comparar):
+def binaria_por_filas(M, x, compare):
     """La alternativa obvia: una búsqueda binaria en cada fila."""
     for i in range(len(M)):
         lo, hi = 0, len(M)
         while lo < hi:
             m = (lo + hi) // 2
-            r = comparar(x, i, m)
+            r = compare(x, i, m)
             if r == 0:
                 return ("está", (i, m))
             if r < 0:
@@ -134,7 +134,7 @@ def ejemplo_chico():
         print(" ".join(f"{v:>3}" for v in fila))
     for x in [21, 14]:
         c = Comparador(M)
-        resultado = escalera(M, x, c)
+        resultado = saddleback_search(M, x, c)
         pasos = " -> ".join(f"M[{i}][{j}]={M[i][j]}" for i, j in c.miradas)
         print(f"x = {x}: {pasos}")
         print(f"   {resultado[0]}, con {c.veces} comparaciones")
@@ -175,7 +175,7 @@ def costos():
     for n in [2, 5, 10, 100, 1000]:
         M, x = adversario(n)
         c = Comparador(M)
-        assert escalera(M, x, c)[0] == "no está"
+        assert saddleback_search(M, x, c)[0] == "no está"
         c2 = Comparador(M)
         binaria_por_filas(M, x, c2)
         print(f"{n:>6} {c.veces:>22} {2 * n - 1:>7} {c2.veces:>18} "
@@ -188,7 +188,7 @@ def costos():
             M = matriz_al_azar(n, rng)
             x = rng.randint(0, M[-1][-1] + 1)
             c = Comparador(M)
-            escalera(M, x, c)
+            saddleback_search(M, x, c)
             p = max(p, c.veces)
         peor[n] = p
     print("en matrices al azar, el peor de 2000 búsquedas: "
@@ -208,7 +208,7 @@ def adversario_en_accion():
             M2[i][j] = x
             libres += ordenada(M2)
         c = Comparador(M)
-        escalera(M, x, c)
+        saddleback_search(M, x, c)
         print(f"n = {n}: {len(D)} celdas en las antidiagonales; en {libres} de ellas se "
               f"puede poner x sin desordenar la matriz; la escalera mira "
               f"{len(set(c.miradas) & D)} de ellas con {c.veces} comparaciones")
@@ -247,7 +247,7 @@ def errores_plantados():
     for n in range(1, 31):
         M, x = adversario(n)
         c = Comparador(M)
-        escalera(M, x, c, columna_minima=1)
+        saddleback_search(M, x, c, columna_minima=1)
         no_miradas = sorted(diagonales(n) - set(c.miradas))
         M2 = [fila[:] for fila in M]
         if no_miradas:
@@ -260,14 +260,14 @@ def errores_plantados():
     for nombre, casos in baterias.items():
         fila = []
         for minima in (0, 1):
-            malos = sum(not correcta(M, x, escalera(M, x, Comparador(M), minima))
+            malos = sum(not correcta(M, x, saddleback_search(M, x, Comparador(M), minima))
                         for M, x in casos)
             fila.append(100 * malos / len(casos))
         fallos[nombre] = fila
         print(f"{nombre:>18} {len(casos):>6} {fila[0]:>8.1f}% {fila[1]:>13.1f}%")
     M, x = adversario(6)
     c = Comparador(M)
-    escalera(M, x, c, columna_minima=1)
+    saddleback_search(M, x, c, columna_minima=1)
     print(f"con n = 6, la versión mala mira {c.veces} celdas y deja sin mirar "
           f"{sorted(diagonales(6) - set(c.miradas))}")
     return fallos
@@ -288,7 +288,7 @@ def pruebas():
         M = matriz_al_azar(n, rng, paso=rng.choice([1, 2, 5]))
         x = rng.randint(-1, M[-1][-1] + 2)
         c = Comparador(M)
-        r = escalera(M, x, c)
+        r = saddleback_search(M, x, c)
         assert correcta(M, x, r) and c.veces <= 2 * n - 1
         assert correcta(M, x, binaria_por_filas(M, x, Comparador(M)))
         comprobaciones += 2
@@ -299,7 +299,7 @@ def pruebas():
         M = matriz_al_azar(n, rng)
         for fila in M:
             for v in fila:
-                assert escalera(M, v, Comparador(M))[0] == "está"
+                assert saddleback_search(M, v, Comparador(M))[0] == "está"
                 comprobaciones += 1
 
     # (c) el adversario: la matriz está ordenada, las 2n - 1 celdas son libres, y la
@@ -312,7 +312,7 @@ def pruebas():
             M2[i][j] = x
             assert ordenada(M2)
         c = Comparador(M)
-        assert escalera(M, x, c)[0] == "no está" and c.veces == 2 * n - 1
+        assert saddleback_search(M, x, c)[0] == "no está" and c.veces == 2 * n - 1
         assert diagonales(n) <= set(c.miradas)
         comprobaciones += 3
 
@@ -367,12 +367,12 @@ def figura_escalera():
 
     def pasos(v):
         c = Comparador(M)
-        escalera(M, v, c)
+        saddleback_search(M, v, c)
         return c.veces
 
     x = max(unicos, key=lambda v: (pasos(v), -v))
     c = Comparador(M)
-    escalera(M, x, c)
+    saddleback_search(M, x, c)
     fig, ax = plt.subplots(figsize=(4.4, 4.4))
     colores = {celda: "#ecfeff" for celda in c.miradas}
     colores[c.miradas[-1]] = "#fde2e7"
@@ -388,7 +388,7 @@ def figura_adversario():
     n = 6
     M, x = adversario(n)
     c = Comparador(M)
-    escalera(M, x, c)
+    saddleback_search(M, x, c)
     fig, ax = plt.subplots(figsize=(4.4, 4.4))
     colores = {}
     for i, j in diagonales(n):

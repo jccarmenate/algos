@@ -34,27 +34,31 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 - **Desde dónde se cuenta.** Los $m$ incrementos empiezan con la cinta en 0, así que el
   potencial de la sección 5 empieza en 0.
 
-La máquina tiene dos estados de trabajo, `acarreo` y `volver`, y uno final, `fin`:
+La máquina tiene dos estados de trabajo, `carry`, que propaga el acarreo hacia la
+izquierda, y `back`, que vuelve al bit menos significativo, y uno final, `halt`:
 
 | estado | lee | escribe | se mueve | pasa a | qué significa |
 |---|---|---|---|---|---|
-| `acarreo` | 1 | 0 | izquierda | `acarreo` | $1 + 1 = 10$: el acarreo sigue |
-| `acarreo` | 0 | 1 | derecha | `volver` | $0 + 1 = 1$: se acabó la suma |
-| `acarreo` | □ | 1 | derecha | `volver` | el número crece un bit |
-| `volver` | 0 | 0 | derecha | `volver` | camino de vuelta |
-| `volver` | □ | □ | izquierda | `fin` | el blanco de la derecha: un paso atrás |
+| `carry` | 1 | 0 | izquierda | `carry` | $1 + 1 = 10$: el acarreo sigue |
+| `carry` | 0 | 1 | derecha | `back` | $0 + 1 = 1$: se acabó la suma |
+| `carry` | □ | 1 | derecha | `back` | el número crece un bit |
+| `back` | 0 | 0 | derecha | `back` | camino de vuelta |
+| `back` | □ | □ | izquierda | `halt` | el blanco de la derecha: un paso atrás |
 
 Dos detalles de diseño. Primero, la máquina no puede contar cuánto se alejó, porque
 tiene una cantidad finita de estados y el acarreo puede recorrer cualquier distancia. El
 blanco de la derecha es lo que le marca el camino de vuelta. Segundo, el estado
-`volver` nunca lee un 1: el acarreo convirtió en 0 todo lo que la vuelta recorre. Por
+`back` nunca lee un 1: el acarreo convirtió en 0 todo lo que la vuelta recorre. Por
 eso la tabla tiene cinco transiciones y no seis, y las pruebas comprueban que las cinco
 se usan.
 
 ## 2. Un ejemplo chico antes de la prueba
 
 Los diez primeros incrementos desde 0. La columna $t$ es la cantidad de unos con que
-termina el número antes de sumar. Las dos últimas columnas son para las secciones 4 y 5.
+termina el número antes de sumar, y "pasos" es lo que cuesta el incremento. Las dos
+últimas columnas son el costo amortizado, que es el costo real más lo que cambia un
+potencial, con los dos potenciales de las secciones 4 y 5: la cantidad de unos de la
+cinta, y el doble de esa cantidad.
 
 ```
    de     a  t  pasos  unos antes  unos después  amort. con unos  amort. con 2·unos
@@ -77,18 +81,19 @@ lo que el potencial va a contabilizar.
 
 ## 3. Un incremento caro, paso a paso
 
-Sumarle 1 a 10111 (el 23) es caro: termina en tres unos.
+Sumarle 1 a 10111 (el 23) es caro: termina en tres unos. Cada fila es un paso: su
+número, el estado y la cinta, con la celda del cabezal entre corchetes.
 
 ```
- 0  acarreo   □   1   0   1   1  [1]  □ 
- 1  acarreo   □   1   0   1  [1]  0   □ 
- 2  acarreo   □   1   0  [1]  0   0   □ 
- 3  acarreo   □   1  [0]  0   0   0   □ 
- 4   volver   □   1   1  [0]  0   0   □ 
- 5   volver   □   1   1   0  [0]  0   □ 
- 6   volver   □   1   1   0   0  [0]  □ 
- 7   volver   □   1   1   0   0   0  [□]
- 8      fin   □   1   1   0   0  [0]  □ 
+ 0    carry   □   1   0   1   1  [1]  □ 
+ 1    carry   □   1   0   1  [1]  0   □ 
+ 2    carry   □   1   0  [1]  0   0   □ 
+ 3    carry   □   1  [0]  0   0   0   □ 
+ 4     back   □   1   1  [0]  0   0   □ 
+ 5     back   □   1   1   0  [0]  0   □ 
+ 6     back   □   1   1   0   0  [0]  □ 
+ 7     back   □   1   1   0   0   0  [□]
+ 8     halt   □   1   1   0   0  [0]  □ 
 8 pasos = 2·3 + 2, y el cabezal termina en la posición 0
 ```
 
@@ -104,9 +109,9 @@ $2t + 2$ pasos y deja el cabezal en la posición 0. Entre los incrementos sobre
 $0, \dots, m - 1$, el más caro cuesta $2\lfloor \log_2 m \rfloor + 2$, que es
 $\Theta(\log m)$.
 
-*Demostración.* La tabla de transiciones da el costo exacto. `acarreo` lee los $t$ unos
+*Demostración.* La tabla de transiciones da el costo exacto. `carry` lee los $t$ unos
 finales, cada uno en un paso, y los convierte en 0. Un paso más escribe el 1, sobre el
-primer 0 o sobre el blanco de la izquierda, y se mueve a la derecha. `volver` recorre
+primer 0 o sobre el blanco de la izquierda, y se mueve a la derecha. `back` recorre
 los $t$ ceros que dejó el acarreo, un paso cada uno. Un último paso lee el blanco de la
 derecha y retrocede al bit menos significativo. En total, $(t + 1) + (t + 1) = 2t + 2$.
 Entre $0, \dots, m - 1$, el que más unos finales tiene es el mayor de la forma
@@ -293,15 +298,15 @@ el cabezal tiene que volver, y el potencial tiene que pagar los dos.
 
 §3. Un incremento caro, paso a paso: 10111 + 1
 ----------------------------------------------
- 0  acarreo   □   1   0   1   1  [1]  □ 
- 1  acarreo   □   1   0   1  [1]  0   □ 
- 2  acarreo   □   1   0  [1]  0   0   □ 
- 3  acarreo   □   1  [0]  0   0   0   □ 
- 4   volver   □   1   1  [0]  0   0   □ 
- 5   volver   □   1   1   0  [0]  0   □ 
- 6   volver   □   1   1   0   0  [0]  □ 
- 7   volver   □   1   1   0   0   0  [□]
- 8      fin   □   1   1   0   0  [0]  □ 
+ 0    carry   □   1   0   1   1  [1]  □ 
+ 1    carry   □   1   0   1  [1]  0   □ 
+ 2    carry   □   1   0  [1]  0   0   □ 
+ 3    carry   □   1  [0]  0   0   0   □ 
+ 4     back   □   1   1  [0]  0   0   □ 
+ 5     back   □   1   1   0  [0]  0   □ 
+ 6     back   □   1   1   0   0  [0]  □ 
+ 7     back   □   1   1   0   0   0  [□]
+ 8     halt   □   1   1   0   0  [0]  □ 
 8 pasos = 2·3 + 2, y el cabezal termina en la posición 0
 
 §3. Costo de cada incremento: 2t + 2

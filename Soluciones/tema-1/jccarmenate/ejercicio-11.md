@@ -22,9 +22,9 @@ python ejercicio-11.py
 
 ## 1. El problema
 
-**Mochila entera.** Hay $n$ objetos con pesos $w_i$ y valores $v_i$ enteros positivos, y
-una capacidad $W$. Se busca el mayor valor total de un subconjunto cuyo peso no pase de
-$W$, usando cada objeto a lo sumo una vez.
+**Mochila entera** (*0/1 knapsack*). Hay $n$ objetos con pesos $w_i$ y valores $v_i$
+enteros positivos, y una capacidad $W$. Se busca el mayor valor total de un subconjunto
+cuyo peso no pase de $W$, usando cada objeto a lo sumo una vez.
 
 Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 
@@ -46,27 +46,27 @@ valor se puede juntar con cada capacidad. Así que guardamos, para cada capacida
 0 a $W$, el mejor valor que cabe en $c$ con los objetos vistos hasta ahora:
 
 ```python
-def mochila(w, v, W):
-    mejor = [0] * (W + 1)
+def knapsack(w, v, W):
+    best = [0] * (W + 1)
     for wi, vi in zip(w, v):
         for c in range(W, wi - 1, -1):          # de mayor a menor: ver la sección 6
-            mejor[c] = max(mejor[c], mejor[c - wi] + vi)
-    return mejor[W]
+            best[c] = max(best[c], best[c - wi] + vi)
+    return best[W]
 ```
 
-**Invariante (M).** Después de procesar los objetos $1, \dots, i$, $\texttt{mejor}[c]$
+**Invariante (M).** Después de procesar los objetos $1, \dots, i$, $\texttt{best}[c]$
 es el mayor valor de un subconjunto de esos objetos, usando cada uno a lo sumo una vez,
 con peso a lo sumo $c$.
 
-**Teorema.** (M) se cumple después de cada objeto, y `mochila` devuelve el óptimo, con a
-lo sumo $n(W + 1)$ actualizaciones de celdas.
+**Teorema.** (M) se cumple después de cada objeto, y `knapsack` devuelve el óptimo, con
+a lo sumo $n(W + 1)$ actualizaciones de celdas.
 
 *Demostración.* Por inducción sobre $i$. Con $i = 0$ todas las celdas valen 0, el valor
 del subconjunto vacío. Al procesar el objeto $i$, el mejor subconjunto de peso a lo sumo
-$c$ o no usa el objeto $i$, con valor $\texttt{mejor}[c]$ anterior, o lo usa, con valor
+$c$ o no usa el objeto $i$, con valor $\texttt{best}[c]$ anterior, o lo usa, con valor
 $v_i$ más el mejor de peso a lo sumo $c - w_i$ **sin** el objeto $i$. Como el ciclo
-recorre $c$ de mayor a menor, al actualizar $\texttt{mejor}[c]$ la celda
-$\texttt{mejor}[c - w_i]$, con $c - w_i < c$, todavía no se actualizó, y guarda el valor
+recorre $c$ de mayor a menor, al actualizar $\texttt{best}[c]$ la celda
+$\texttt{best}[c - w_i]$, con $c - w_i < c$, todavía no se actualizó, y guarda el valor
 sin el objeto $i$. Cada objeto recorre a lo sumo $W + 1$ celdas. $\square$
 
 Cuatro objetos y capacidad 12:
@@ -199,8 +199,8 @@ por el problema.
 ## 6. El error plantado: recorrer las capacidades al revés
 
 El ciclo interno recorre las capacidades **de mayor a menor**, y la demostración de la
-sección 2 dice por qué: al actualizar $\texttt{mejor}[c]$ se lee
-$\texttt{mejor}[c - w_i]$, que tiene que ser todavía el valor **sin** el objeto $i$. De
+sección 2 dice por qué: al actualizar $\texttt{best}[c]$ se lee
+$\texttt{best}[c - w_i]$, que tiene que ser todavía el valor **sin** el objeto $i$. De
 menor a mayor, esa celda ya se actualizó, y el objeto $i$ se puede volver a usar.
 Probemos las dos versiones contra tres baterías:
 
@@ -221,8 +221,8 @@ Cuando ningún objeto cabe dos veces, las dos versiones coinciden.*
 se puede usar cualquier cantidad de veces. Si $W$ es menor que el doble del peso mínimo,
 las dos versiones coinciden.
 
-*Demostración.* De menor a mayor, al actualizar $\texttt{mejor}[c]$ la celda
-$\texttt{mejor}[c - w_i]$ ya incluye al objeto $i$, así que la recurrencia es la de la
+*Demostración.* De menor a mayor, al actualizar $\texttt{best}[c]$ la celda
+$\texttt{best}[c - w_i]$ ya incluye al objeto $i$, así que la recurrencia es la de la
 mochila con repetición: el mejor de peso a lo sumo $c$ o no usa el objeto $i$, o lo usa
 una vez más sobre el mejor de peso a lo sumo $c - w_i$ con repetición. Si
 $W < 2 \min_i w_i$, ningún objeto cabe dos veces, y las dos mochilas tienen los mismos

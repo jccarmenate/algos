@@ -21,8 +21,8 @@ python ejercicio-05.py
 ## 1. El problema
 
 **Detección de ciclos.** Una lista enlazada es una sucesión de nodos, cada uno con un
-puntero `sig` al siguiente. Se da la cabeza, y hay que decidir si la lista termina
-(algún `sig` es `None`) o si vuelve sobre sí misma. El costo es la cantidad de punteros
+puntero `next` al siguiente. Se da la cabeza, y hay que decidir si la lista termina
+(algún `next` es `None`) o si vuelve sobre sí misma. El costo es la cantidad de punteros
 que se leen.
 
 Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
@@ -35,9 +35,9 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
   apunta a sí mismo son entradas válidas, y el algoritmo tiene que contestarlas bien.
 
 Llamemos $x_i$ al nodo al que se llega con $i$ pasos desde la cabeza, así que $x_0$ es
-la cabeza y $x_{i+1}$ es el `sig` de $x_i$. Como cada nodo tiene un solo `sig`, hay solo
-dos formas posibles. **Sin ciclo**, $x_0, \dots, x_{n-1}$ son distintos y el `sig` de
-$x_{n-1}$ es `None`. **Con ciclo**, hay una **cola** de $\mu \ge 0$ nodos
+la cabeza y $x_{i+1}$ es el `next` de $x_i$. Como cada nodo tiene un solo `next`, hay
+solo dos formas posibles. **Sin ciclo**, $x_0, \dots, x_{n-1}$ son distintos y el `next`
+de $x_{n-1}$ es `None`. **Con ciclo**, hay una **cola** de $\mu \ge 0$ nodos
 $x_0, \dots, x_{\mu-1}$ y un **ciclo** de $\lambda \ge 1$ nodos
 $x_\mu, \dots, x_{\mu+\lambda-1}$, cuyo último nodo apunta de nuevo a $x_\mu$. En total
 $n = \mu + \lambda$ nodos distintos, y para $i \ge \mu$ el camino da vueltas:
@@ -63,9 +63,14 @@ liebre, calculado corriendo el algoritmo: $x_5$, en la vuelta 5.*
 
 ## 2. Un ejemplo chico antes de la prueba
 
-En la lista de la figura 1, la columna $D$ es cuántos pasos tendría que dar la liebre
-dentro del ciclo para alcanzar a la tortuga. Solo tiene sentido cuando la tortuga ya
-está en el ciclo. La última columna es el potencial de la sección 4.
+El algoritmo de Floyd, que la sección 3 escribe completo, mueve dos punteros desde la
+cabeza: la **tortuga** avanza un nodo por vuelta y la **liebre** avanza dos. Si alguna
+vez están en el mismo nodo, hay ciclo; si la liebre llega al final, no lo hay. En la
+lista de la figura 1, la columna $k$ es el número de vuelta, y la columna $D$ es
+cuántos pasos tendría que dar la liebre dentro del ciclo para alcanzar a la tortuga;
+solo tiene sentido cuando la tortuga ya está en el ciclo. La última columna es un
+número que baja en cada vuelta, el potencial de la sección 4, y $k^*$, en la última
+línea, es la vuelta en que se encuentran.
 
 ```
  k  tortuga en  liebre en  tortuga en el ciclo   D  potencial
@@ -94,14 +99,14 @@ n = 8: no hay ciclo en 4 vueltas y 12 lecturas; 3·floor(n/2) + (n mod 2) = 12
 El algoritmo, con la liebre leyendo cada puntero una sola vez:
 
 ```python
-def floyd(cabeza):
-    t = h = cabeza
+def floyd(head):
+    t = h = head
     while h is not None:
-        h1 = h.sig                 # primera lectura de la liebre
+        h1 = h.next                # primera lectura de la liebre
         if h1 is None:
             break
-        h = h1.sig                 # segunda lectura de la liebre
-        t = t.sig                  # la lectura de la tortuga
+        h = h1.next                # segunda lectura de la liebre
+        t = t.next                 # la lectura de la tortuga
         if t is h:
             return "hay ciclo"
     return "no hay ciclo"
@@ -126,7 +131,7 @@ porque va detrás de la liebre.**
 *Conclusión.* Por (I), el algoritmo contesta "hay ciclo" al final de la vuelta $k \ge 1$
 si y solo si $x_k = x_{2k}$, como nodos. Si se encuentran, hay ciclo: $x_k = x_{2k}$ con
 $k < 2k$ es un nodo visitado dos veces, y por el lema de la sección 1, sin ciclo eso no
-pasa. Si hay ciclo, se encuentran: ningún `sig` es `None`, así que la salida "no hay
+pasa. Si hay ciclo, se encuentran: ningún `next` es `None`, así que la salida "no hay
 ciclo" nunca se toma, y por el mismo lema $x_k = x_{2k}$ si y solo si $k \ge \mu$ y
 $\lambda$ divide a $2k - k = k$. La primera vuelta $k \ge 1$ que cumple eso es $k^*$.
 $\square$
@@ -207,7 +212,7 @@ encuentra el `None`. Con ciclo hay $k^*$ vueltas. Si $\mu \ge 1$, entre los $\la
 enteros consecutivos $\mu, \mu + 1, \dots, \mu + \lambda - 1$ hay exactamente un
 múltiplo de $\lambda$, así que $k^* \le \mu + \lambda - 1 = n - 1$. Si $\mu = 0$,
 $k^* = \lambda = n$. La memoria son dos punteros, y uno auxiliar para no leer dos veces
-el mismo `sig`. $\square$
+el mismo `next`. $\square$
 
 En el peor caso, entonces, $3n$ lecturas, y se alcanza exactamente cuando la lista
 entera es un ciclo:
@@ -227,7 +232,7 @@ entera es un ciclo:
 nodos.
 
 *Demostración.* Tomemos la lista sin ciclo de $n$ nodos y un algoritmo que contesta bien
-"no hay ciclo". Supongamos que nunca leyó el `sig` de algún nodo $x_j$. Cambiemos ese
+"no hay ciclo". Supongamos que nunca leyó el `next` de algún nodo $x_j$. Cambiemos ese
 puntero para que apunte a la cabeza: la lista nueva tiene un ciclo. Pero el algoritmo
 hace exactamente lo mismo sobre las dos, porque el único puntero distinto es uno que no
 lee, y los nodos que solo se alcanzan a través de él tampoco los ve. Así que contesta
@@ -276,8 +281,8 @@ calidad: [MP4](animaciones/ejercicio-05-entrada.mp4).*
 
 Dos maneras de escribir mal el algoritmo, cada una contra una parte distinta de la
 demostración. **La liebre de un paso** comprueba solo que la liebre exista, y después da
-dos pasos con `h = h.sig.sig`. **Comparar valores** pregunta `t.valor == h.valor` en vez
-de `t is h`. Probemos las dos contra cuatro baterías de listas cuyos nodos guardan
+dos pasos con `h = h.next.next`. **Comparar valores** pregunta `t.value == h.value` en
+vez de `t is h`. Probemos las dos contra cuatro baterías de listas cuyos nodos guardan
 valores al azar en $0..9$. Una ejecución que revienta cuenta como fallo.
 
 ```
@@ -302,8 +307,8 @@ $n$ es impar.
 
 *Demostración.* Con ciclo no hay ningún `None`, así que nunca revienta. Sin ciclo, la
 liebre pisa solo índices pares, y revienta exactamente cuando está en el último nodo,
-$x_{n-1}$: el primer paso llega a `None` y el segundo intenta leer su `sig`. Eso pasa si
-y solo si $n - 1$ es par. $\square$
+$x_{n-1}$: el primer paso llega a `None` y el segundo intenta leer su `next`. Eso pasa
+si y solo si $n - 1$ es par. $\square$
 
 ```
 la liebre de un paso revienta, entre las listas sin ciclo de 1 a 40 nodos, exactamente en las de largo impar: True
@@ -333,18 +338,18 @@ primero, la de listas con ciclo para ver si las detecta, no ve ninguna de las do
 Antes de dibujar, el script se comprueba a sí mismo: respuesta, vueltas y lecturas
 exactas para todas las listas con $\mu$ y $\lambda$ hasta 80, el invariante y el
 potencial en cada vuelta, 300 listas al azar de hasta 6000 nodos contra la búsqueda que
-recuerda los nodos vistos, la entrada al ciclo para $\mu$ y $\lambda$ hasta 60, y la cota
-$k^* \le n$:
+recuerda los nodos vistos, la entrada al ciclo para $\mu$ y $\lambda$ hasta 60, y la
+cota $k^* \le n$:
 
 ```
 52 063 comprobaciones, 0 fallos
 ```
 
-La regla práctica que te llevas: **cada paso de la demostración es una prueba que hay que
-escribir.** El mantenimiento usa que $x_{2k+1}$ existe, así que hay que probar listas
-que terminan en índice impar; la conclusión usa que encontrarse es ser el mismo nodo,
-así que hay que probar valores repetidos. Las pruebas que salen del enunciado, "listas
-con ciclo", no tocan ninguno de los dos pasos.
+La regla práctica que te llevas: **cada paso de la demostración es una prueba que hay
+que escribir.** El mantenimiento usa que $x_{2k+1}$ existe, así que hay que probar
+listas que terminan en índice impar; la conclusión usa que encontrarse es ser el mismo
+nodo, así que hay que probar valores repetidos. Las pruebas que salen del enunciado,
+"listas con ciclo", no tocan ninguno de los dos pasos.
 
 ## 9. Resumen
 

@@ -52,8 +52,12 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 
 ## 2. Un ejemplo chico antes del algoritmo
 
-Doce elementos, rotados para que el mínimo quede en la posición 7. La segunda línea es la
-respuesta a "¿$A[i] \le A[11]$?" para cada $i$:
+Doce elementos, rotados para que el mínimo quede en la posición 7. La segunda línea es
+la respuesta a "¿$A[i] \le A[11]$?" para cada $i$. Abajo, la búsqueda: guarda una
+ventana $[\mathit{lo}, \mathit{hi}]$ de posiciones donde todavía puede estar $k$, y en
+cada paso compara con $A[11]$ el elemento del medio,
+$A[m]$ con $m = \lfloor (\mathit{lo} + \mathit{hi})/2 \rfloor$, y se queda con la mitad
+que corresponde:
 
 ```
 A = 27 31 40 46 53 61 70 3 8 11 15 22
@@ -75,9 +79,9 @@ ventana $[\mathit{lo}, \mathit{hi}]$ en cada paso, con un triángulo en la posic
 se compara. La ventana siempre contiene a $k = 7$.*
 
 Fíjate en que el arreglo no está ordenado, pero la fila de respuestas sí: primero todos
-"no", después todos "sí", y $k$ es el primer "sí". Buscar el borde de una fila así es una
-búsqueda binaria, y cada comparación descarta la mitad: la ventana pasa de 12 posiciones
-a 6, a 3, a 2 y a 1, con 4 comparaciones, que es $\lceil \log_2 12 \rceil$.
+"no", después todos "sí", y $k$ es el primer "sí". Buscar el borde de una fila así es
+una búsqueda binaria, y cada comparación descarta la mitad: la ventana pasa de 12
+posiciones a 6, a 3, a 2 y a 1, con 4 comparaciones, que es $\lceil \log_2 12 \rceil$.
 
 ## 3. Fuerza bruta
 
@@ -85,9 +89,9 @@ Si $k \ge 1$, el único lugar donde el arreglo baja es entre $A[k-1]$, el últim
 tramo alto, y $A[k]$. Si $k = 0$, no baja en ningún lado. Basta recorrer:
 
 ```python
-def fuerza_bruta(n, c):
+def brute_force(n, c):
     for i in range(n - 1):
-        if c.mayor(i, i + 1):        # A[i] > A[i+1]
+        if c.greater(i, i + 1):      # A[i] > A[i+1]
             return i + 1
     return 0
 ```
@@ -121,11 +125,11 @@ vacío. $A[0]$ parece igual de natural, pero solo está en el tramo alto si el a
 está rotado; la sección 10 muestra qué pasa si se usa.
 
 ```python
-def punto_de_rotacion(n, c):
+def rotation_point(n, c):
     lo, hi = 0, n - 1
     while lo < hi:
         m = (lo + hi) // 2
-        if c.mayor(m, n - 1):        # A[m] > A[n-1]: m está antes de k
+        if c.greater(m, n - 1):      # A[m] > A[n-1]: m está antes de k
             lo = m + 1
         else:
             hi = m
@@ -142,7 +146,7 @@ todo $i < \mathit{lo}$, y $A[\mathit{hi}] \le A[n-1]$.
 Por el lema de la sección 4, (I) equivale a $\mathit{lo} \le k \le \mathit{hi}$.
 
 **Teorema.** (I) se cumple al comienzo de cada vuelta, el ciclo termina, y
-`punto_de_rotacion` devuelve $k$.
+`rotation_point` devuelve $k$.
 
 *Demostración.* *Inicialización.* Con $\mathit{lo} = 0$, la primera afirmación es sobre
 un conjunto vacío. Con $\mathit{hi} = n-1$, la segunda es $A[n-1] \le A[n-1]$. **Aquí se
@@ -172,7 +176,7 @@ sección 10).
 
 ## 6. Costo
 
-**Teorema.** `punto_de_rotacion` hace a lo sumo $\lceil \log_2 n \rceil$ comparaciones,
+**Teorema.** `rotation_point` hace a lo sumo $\lceil \log_2 n \rceil$ comparaciones,
 y el arreglo sin rotar alcanza esa cota. La memoria es $O(1)$.
 
 *Demostración.* Sea $T(s)$ el máximo de comparaciones con una ventana de tamaño $s$. Una
@@ -204,7 +208,7 @@ La sección 6 dice cuánto cuesta **este** algoritmo. Ahora acotamos lo que cues
 **cualquiera** en el modelo de comparaciones.
 
 **Teorema.** Todo algoritmo de comparaciones hace al menos $\lceil \log_2 n \rceil$
-comparaciones en el peor caso. En consecuencia, `punto_de_rotacion` es óptimo para todo
+comparaciones en el peor caso. En consecuencia, `rotation_point` es óptimo para todo
 $n$, sin ninguna constante de por medio.
 
 *Demostración.* Fijemos $n$ y un algoritmo de comparaciones. Su primera comparación no
@@ -248,8 +252,8 @@ conjunto de rotaciones todavía posibles. El mejor peor caso desde un conjunto $
 $$\mathrm{opt}(S) = 0 \text{ si } |S| \le 1, \qquad
 \mathrm{opt}(S) = 1 + \min_{a < b} \max\big(\mathrm{opt}(S \cap I_{ab}),\ \mathrm{opt}(S \setminus I_{ab})\big),$$
 
-con $I_{ab} = \{a+1, \dots, b\}$ y el mínimo sobre las preguntas que parten a $S$ en dos.
-El script lo calcula para todo $n \le 12$:
+con $I_{ab} = \{a+1, \dots, b\}$ y el mínimo sobre las preguntas que parten a $S$ en
+dos. El script lo calcula para todo $n \le 12$:
 
 ```
        n  algoritmo vs adversario  fuerza bruta vs adversario  ceil(log2 n)  óptimo por DP
@@ -324,7 +328,7 @@ La versión que tolera repetidos compara con $A[\mathit{hi}]$ y, si son iguales,
 descarta $\mathit{hi}$:
 
 ```python
-r = c.comparar(m, hi)            # -1, 0 o 1
+r = c.compare(m, hi)            # -1, 0 o 1
 if r > 0:   lo = m + 1
 elif r < 0: hi = m
 else:       hi -= 1              # A[m] = A[hi]: lo único seguro es soltar hi
@@ -342,7 +346,7 @@ el primer $i$ con $A[i] < A[0]$, que para $k \ge 1$ también es $k$. Plantemos e
 error:
 
 ```python
-if not c.mayor(0, m):            # mal: A[m] >= A[0] no siempre dice "m está antes de k"
+if not c.greater(0, m):          # mal: A[m] >= A[0] no siempre dice "m está antes de k"
     lo = m + 1
 else:
     hi = m

@@ -47,7 +47,8 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 ## 2. Un ejemplo chico antes del algoritmo
 
 Cuatro proponentes y cuatro receptores. Nadie lista a $b_3$, y cada proponente lista
-solo a dos receptores:
+solo a dos receptores. Cada lista va de la más preferida a la menos: `a1: b4 > b2`
+quiere decir que $a_1$ acepta solo a $b_4$ y a $b_2$, y prefiere a $b_4$.
 
 ```
 a1: b4 > b2         b1: a3 > a1 > a2 > a4
@@ -56,7 +57,9 @@ a3: b1 > b4         b3: a2 > a3 > a4 > a1
 a4: b1 > b4         b4: a4 > a1 > a3 > a2
 ```
 
-La ejecución con la cola de libres, propuesta por propuesta:
+La ejecución con la cola de libres, propuesta por propuesta. En la última línea, $L$
+es la cantidad total de pares $(a, b)$ con $b$ en la lista de $a$, es decir, la suma de
+los largos de las listas de los proponentes:
 
 ```
 paso  propone a   tenía  se queda con  qué pasa
@@ -120,44 +123,44 @@ La adaptación es una condición: un proponente entra a la cola solo si le queda
 
 ```python
 def gale_shapley(pref_a, pref_b):
-    rango = [{a: lugar for lugar, a in enumerate(pref_b[b])} for b in range(len(pref_b))]
-    siguiente = [0] * len(pref_a)            # a qué lugar de su lista va a proponer a
-    pareja_de_b = [None] * len(pref_b)
-    le_queda = lambda a: siguiente[a] < len(pref_a[a])
-    libres = deque(a for a in range(len(pref_a)) if le_queda(a))
-    while libres:
-        a = libres.popleft()
-        b = pref_a[a][siguiente[a]]
-        siguiente[a] += 1
-        actual = pareja_de_b[b]
-        if actual is None:
-            pareja_de_b[b], rechazado = a, None
-        elif rango[b][a] < rango[b][actual]:
-            pareja_de_b[b], rechazado = a, actual
+    rank = [{a: pos for pos, a in enumerate(pref_b[b])} for b in range(len(pref_b))]
+    next_choice = [0] * len(pref_a)            # a qué lugar de su lista va a proponer a
+    match_of_b = [None] * len(pref_b)
+    has_more = lambda a: next_choice[a] < len(pref_a[a])
+    free = deque(a for a in range(len(pref_a)) if has_more(a))
+    while free:
+        a = free.popleft()
+        b = pref_a[a][next_choice[a]]
+        next_choice[a] += 1
+        current = match_of_b[b]
+        if current is None:
+            match_of_b[b], rejected = a, None
+        elif rank[b][a] < rank[b][current]:
+            match_of_b[b], rejected = a, current
         else:
-            rechazado = a
-        if rechazado is not None and le_queda(rechazado):
-            libres.append(rechazado)         # si no le queda nadie, se queda solo
-    return pareja_de_b
+            rejected = a
+        if rejected is not None and has_more(rejected):
+            free.append(rejected)         # si no le queda nadie, se queda solo
+    return match_of_b
 ```
 
 La versión del script además deja elegir el orden de ejecución (cola, pila o al azar),
 porque todo lo que se demuestre tiene que valer para cualquier orden.
 
 **Invariante (Q).** Todo proponente que está en la cola de libres cumple
-$\texttt{siguiente}[a] < |\text{lista}(a)|$.
+$\texttt{next\_choice}[a] < |\text{lista}(a)|$.
 
 **Lema.** (Q) se cumple en todo momento. En particular, cada lectura
-$\texttt{pref\_a}[a][\texttt{siguiente}[a]]$ es válida. Además, un receptor comprometido
-no vuelve a quedar libre y su pareja solo mejora, y cada proponente propone en el orden
-de su lista.
+$\texttt{pref\_a}[a][\texttt{next\_choice}[a]]$ es válida. Además, un receptor
+comprometido no vuelve a quedar libre y su pareja solo mejora, y cada proponente propone
+en el orden de su lista.
 
 *Demostración.* *Inicialización.* Entran a la cola solo los de lista no vacía, con
-$\texttt{siguiente} = 0$. *Mantenimiento.* Un proponente solo vuelve a entrar si
-`le_queda`, y mientras está en la cola su `siguiente` no cambia. *Conclusión.* Cada vez
-que se lee la lista de $a$, el índice existe. Las otras dos afirmaciones se leen del
+$\texttt{next\_choice} = 0$. *Mantenimiento.* Un proponente solo vuelve a entrar si
+`has_more`, y mientras está en la cola su `next_choice` no cambia. *Conclusión.* Cada
+vez que se lee la lista de $a$, el índice existe. Las otras dos afirmaciones se leen del
 código: un receptor solo cambia de pareja si llega alguien que prefiere, y
-`siguiente[a]` solo avanza. $\square$
+`next_choice[a]` solo avanza. $\square$
 
 ## 4. Terminación y costo
 
@@ -166,12 +169,12 @@ lineal en el tamaño de la entrada. La cota $L$ se alcanza.
 
 *Demostración.* Sea $\Phi$ la cantidad de pares $(a, b)$, con $b$ en la lista de $a$,
 tales que $a$ todavía no le propuso a $b$. Al principio $\Phi = L$. Cada vuelta del
-ciclo es exactamente una propuesta, que no se repite porque `siguiente[a]` solo avanza,
-y es a alguien de la lista de $a$, por (Q). Así que $\Phi$ baja 1 por vuelta y nunca es
-negativo: a lo sumo $L$ vueltas. Con `siguiente` y la tabla `rango`, cada vuelta cuesta
-$O(1)$, y construir `rango` cuesta la suma de los largos de las listas de los
-receptores. Para ver que la cota se alcanza, basta que seis proponentes listen solo a
-$b_1$: cada uno le propone una vez, $b_1$ se queda con su favorito y los otros cinco
+ciclo es exactamente una propuesta, que no se repite porque `next_choice[a]` solo
+avanza, y es a alguien de la lista de $a$, por (Q). Así que $\Phi$ baja 1 por vuelta y
+nunca es negativo: a lo sumo $L$ vueltas. Con `next_choice` y la tabla `rank`, cada
+vuelta cuesta $O(1)$, y construir `rank` cuesta la suma de los largos de las listas de
+los receptores. Para ver que la cota se alcanza, basta que seis proponentes listen solo
+a $b_1$: cada uno le propone una vez, $b_1$ se queda con su favorito y los otros cinco
 quedan solos, con $6 = L$ propuestas. $\square$
 
 Es el mismo potencial del caso de listas completas, con la cuenta inicial cambiada:
@@ -235,7 +238,7 @@ $(a, b)$ bloquea. $\square$
 
 Lo único nuevo respecto del caso de listas completas es el segundo paso. La cláusula
 "$a$ está solo" de la definición necesita que un proponente solo haya recorrido toda su
-lista, y eso es exactamente lo que garantiza la condición de `le_queda`. La sección 7
+lista, y eso es exactamente lo que garantiza la condición de `has_more`. La sección 7
 muestra qué pasa si esa condición está mal escrita. El script comprueba el teorema
 contra el oráculo, que enumera todos los emparejamientos de pares aceptables de
 instancias chicas y se queda con los estables:
@@ -310,11 +313,11 @@ uno:
 ## 7. El error que la demostración anuncia
 
 El paso nuevo de la demostración de estabilidad es que un proponente que terminó solo le
-propuso a toda su lista. Descansa en una sola comparación, la de `le_queda`, y ahí es
+propuso a toda su lista. Descansa en una sola comparación, la de `has_more`, y ahí es
 donde se comete un error de índice. Plantemos el error de rendirse una propuesta antes:
 
 ```python
-le_queda = lambda a: siguiente[a] < len(pref_a[a]) - 1     # mal: nunca prueba al último
+has_more = lambda a: next_choice[a] < len(pref_a[a]) - 1     # mal: nunca prueba al último
 ```
 
 El proponente que llega al final de su lista se queda solo sin haberle propuesto a su
@@ -354,7 +357,7 @@ resultado tiene un proponente solo. En consecuencia un verificador que solo exam
 pares con los dos agentes emparejados no detecta el error nunca.
 
 *Demostración.* En la demostración de estabilidad, el paso "un proponente con pareja le
-propuso a todos los que prefiere a ella" no usa `le_queda`, así que sigue valiendo con
+propuso a todos los que prefiere a ella" no usa `has_more`, así que sigue valiendo con
 el error, y la contradicción sigue cerrando para todo proponente con pareja. Así que
 ningún proponente con pareja está en una pareja bloqueante. $\square$
 

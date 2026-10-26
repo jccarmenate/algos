@@ -41,8 +41,12 @@ Tres precisiones que un enunciado tiene que dar, y que casi nunca se dan:
 ## 2. Un ejemplo chico antes de la prueba
 
 Busquemos en un arreglo de diez elementos, primero un valor que no está y después uno
-que sí. La columna `bits` es la cantidad de bits de $\mathit{hi} - \mathit{lo}$, y va a
-importar en la sección 5.
+que sí. La búsqueda lleva una **ventana** de candidatos, las posiciones
+$\mathit{lo}, \mathit{lo} + 1, \dots, \mathit{hi} - 1$ donde todavía puede estar $x$.
+Empieza con $\mathit{lo} = 0$ y $\mathit{hi} = n$, y en cada paso compara $x$ con el
+elemento del medio, $A[m]$ con $m = \lfloor (\mathit{lo} + \mathit{hi})/2 \rfloor$.
+La columna `bits` es la cantidad de bits de $\mathit{hi} - \mathit{lo}$, el tamaño de la
+ventana, y va a importar en la sección 5.
 
 ```
 x = 50
@@ -88,11 +92,11 @@ La ventana es semiabierta: los candidatos son
 $A[\mathit{lo}], \dots, A[\mathit{hi} - 1]$.
 
 ```python
-def busqueda_binaria(A, x, comparar):
+def binary_search(A, x, compare):
     lo, hi = 0, len(A)
     while lo < hi:
         m = (lo + hi) // 2
-        r = comparar(x, A[m])            # -1, 0 o 1
+        r = compare(x, A[m])            # -1, 0 o 1
         if r == 0:
             return ("está", m)
         if r < 0:
@@ -102,7 +106,7 @@ def busqueda_binaria(A, x, comparar):
     return ("hueco", lo)
 ```
 
-`comparar` es un objeto que contesta la comparación y cuenta cuántas veces se le
+`compare` es un objeto que contesta la comparación y cuenta cuántas veces se le
 preguntó. Así el script mide el costo en el modelo, y no en segundos.
 
 ## 4. El invariante
@@ -224,9 +228,9 @@ primera, y así sucesivamente. Todas las ejecuciones posibles forman un árbol: 
 interno es una comparación de $x$ con algún $A[i]$, con una rama por respuesta, y cada
 hoja es una salida. El peor caso del algoritmo es la altura del árbol.
 
-**La trampa de las tres ramas.** Cada comparación tiene tres respuestas, así que el árbol
-es ternario. Contar todas las salidas posibles, $n$ posiciones más $n + 1$ huecos, y
-exigir una hoja para cada una solo da $\lceil \log_3 (2n+1) \rceil$, que es bastante
+**La trampa de las tres ramas.** Cada comparación tiene tres respuestas, así que el
+árbol es ternario. Contar todas las salidas posibles, $n$ posiciones más $n + 1$ huecos,
+y exigir una hoja para cada una solo da $\lceil \log_3 (2n+1) \rceil$, que es bastante
 menos que lo que hace la búsqueda binaria:
 
 ```
@@ -264,8 +268,8 @@ $h \ge \lceil \log_2 (n+1) \rceil$. $\square$
 
 *Figura 1. El argumento con $x_1$ en el hueco $h_1$ y $x_2$ en el $h_4$. Si llegan a la
 misma hoja, ninguna comparación separó a $x_1$ de $x_2$, así que el algoritmo no comparó
-con $A[1]$, $A[2]$ ni $A[3]$. Entonces $x = A[2]$ recibe las mismas respuestas que $x_1$,
-y el algoritmo contesta que no está.*
+con $A[1]$, $A[2]$ ni $A[3]$. Entonces $x = A[2]$ recibe las mismas respuestas que
+$x_1$, y el algoritmo contesta que no está.*
 
 ![El argumento del testigo](animaciones/ejercicio-02-testigo.gif)
 
@@ -445,15 +449,15 @@ el mismo potencial, así que da a lo sumo $\lceil \log_2 (n+1) \rceil$ vueltas. 
 pregunta más decide si $A[\mathit{lo}]$ es $x$.
 
 ```python
-def busqueda_dos_vias(A, x, menor):
+def two_way_binary_search(A, x, less):
     lo, hi = 0, len(A)
     while lo < hi:                       # invariante: A[:lo] < x <= A[hi:]
         m = (lo + hi) // 2
-        if menor(A[m], x):
+        if less(A[m], x):
             lo = m + 1
         else:
             hi = m
-    if lo < len(A) and not menor(x, A[lo]):
+    if lo < len(A) and not less(x, A[lo]):
         return ("está", lo)
     return ("hueco", lo)
 ```
